@@ -1,0 +1,154 @@
+{
+  "projectType": "framework",
+  "projectName": "Windows-MCP",
+  "projectDescription": "MCP server enabling AI agents to interact with Windows OS through automation tools",
+  "theme": "aspen",
+  "primaryColor": "#f58a23",
+  "lightColor": "#fbb86e",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/architecture",
+              "concepts/modes",
+              "concepts/transports"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/claude-desktop",
+              "configuration/perplexity",
+              "configuration/gemini",
+              "configuration/qwen",
+              "configuration/codex"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/desktop-automation",
+              "guides/browser-automation",
+              "guides/file-operations",
+              "guides/process-management",
+              "guides/troubleshooting"
+            ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "security/overview",
+              "security/best-practices",
+              "security/deployment"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Tools Reference",
+        "groups": [
+          {
+            "group": "UI Automation",
+            "pages": [
+              "tools/snapshot",
+              "tools/click",
+              "tools/type",
+              "tools/scroll",
+              "tools/move",
+              "tools/shortcut",
+              "tools/wait"
+            ]
+          },
+          {
+            "group": "Application & System",
+            "pages": [
+              "tools/app",
+              "tools/shell",
+              "tools/filesystem",
+              "tools/process",
+              "tools/registry"
+            ]
+          },
+          {
+            "group": "Multi-Operations",
+            "pages": [
+              "tools/multiselect",
+              "tools/multiedit"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "tools/scrape",
+              "tools/clipboard",
+              "tools/notification"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Contributing",
+            "pages": [
+              "contributing/setup",
+              "contributing/guidelines",
+              "contributing/architecture"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/changelog",
+              "resources/faq",
+              "resources/community"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "17 MCP tools for Windows automation (UI, system, file operations)",
+    "Works with any LLM without requiring vision models",
+    "DOM mode for browser automation",
+    "Local and remote (VM) deployment modes",
+    "Multi-display support with coordinate mapping",
+    "Real-time UI element detection via accessibility tree",
+    "PowerShell integration for system commands",
+    "Clipboard, process, and registry management"
+  ],
+  "publicApiSurface": [
+    "App - Launch/resize/switch applications",
+    "Shell/PowerShell - Execute PowerShell commands",
+    "FileSystem - Read/write/copy/move/delete/search files",
+    "Snapshot - Capture desktop state with screenshots",
+    "Click - Mouse clicks at coordinates or UI elements",
+    "Type - Type text into UI elements",
+    "Scroll - Scroll vertically or horizontally",
+    "Move - Move mouse or drag-and-drop",
+    "Shortcut - Execute keyboard shortcuts",
+    "Wait - Pause execution",
+    "Scrape - Fetch web page content",
+    "MultiSelect - Select multiple items",
+    "MultiEdit - Edit multiple fields",
+    "Clipboard - Get/set clipboard content",
+    "Process - List/kill processes",
+    "Notification - Send Windows toast notifications",
+    "Registry - Read/write/delete registry keys"
+  ]
+}
