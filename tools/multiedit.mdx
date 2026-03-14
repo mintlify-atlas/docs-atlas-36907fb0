@@ -1,0 +1,319 @@
+---
+title: MultiEdit
+description: Enter text into multiple input fields simultaneously
+---
+
+The MultiEdit tool allows you to fill multiple text input fields at once, streamlining form filling and batch text entry operations. You can specify targets either by coordinates or by UI element labels from a Snapshot.
+
+## Parameters
+
+<ParamField path="locs" type="array">
+  Array of locations with text: `[[x1, y1, text1], [x2, y2, text2], ...]`
+  
+  Each entry is a three-element array:
+  - `x`: X coordinate of the input field
+  - `y`: Y coordinate of the input field
+  - `text`: Text to enter into the field
+  
+  Provide either `locs` or `labels`.
+</ParamField>
+
+<ParamField path="labels" type="array">
+  Array of label-text pairs: `[[label1, text1], [label2, text2], ...]`
+  
+  Each entry is a two-element array:
+  - `label`: UI element label/ID from a Snapshot
+  - `text`: Text to enter into the field
+  
+  Provide either `locs` or `labels`.
+</ParamField>
+
+## How It Works
+
+The MultiEdit tool:
+1. Iterates through each location or label
+2. Clicks on the input field to focus it
+3. Types the specified text into the field
+4. Moves to the next field
+
+This is significantly faster than manually clicking and typing into each field individually.
+
+## Usage Examples
+
+### Form Filling with Coordinates
+
+```python
+# Fill out a registration form using coordinates
+multi_edit_tool(
+    locs=[
+        [300, 150, "John Doe"],        # Name field
+        [300, 200, "john@example.com"], # Email field
+        [300, 250, "555-1234"],         # Phone field
+        [300, 300, "123 Main St"]       # Address field
+    ]
+)
+```
+
+### Form Filling with Labels
+
+```python
+# First, take a snapshot to get field labels
+snapshot_result = state_tool(use_ui_tree=True)
+
+# Then fill fields using their labels
+multi_edit_tool(
+    labels=[
+        [42, "John Doe"],          # Name field label 42
+        [43, "john@example.com"],  # Email field label 43
+        [44, "555-1234"],          # Phone field label 44
+        [45, "123 Main St"]        # Address field label 45
+    ]
+)
+```
+
+### Login Form
+
+```python
+# Fill username and password fields
+multi_edit_tool(
+    locs=[
+        [400, 250, "myusername"],
+        [400, 300, "mypassword"]
+    ]
+)
+```
+
+### Multi-Field Search Form
+
+```python
+# Fill multiple search criteria
+multi_edit_tool(
+    labels=[
+        [10, "Software Engineer"],  # Job title
+        [11, "New York"],           # Location
+        [12, "Full-time"],          # Job type
+        [13, "Remote"]              # Work arrangement
+    ]
+)
+```
+
+### Data Entry Workflow
+
+```python
+# Take snapshot to identify fields
+snapshot = state_tool(use_ui_tree=True)
+
+# Fill multiple records in a data entry form
+multi_edit_tool(
+    labels=[
+        [20, "2024-01-15"],   # Date
+        [21, "Invoice"],      # Type
+        [22, "1000.00"],      # Amount
+        [23, "Client ABC"]    # Customer
+    ]
+)
+```
+
+### Contact Information Form
+
+```python
+# Fill all contact fields at once
+contact_data = [
+    [250, 100, "John Smith"],
+    [250, 150, "john.smith@company.com"],
+    [250, 200, "+1-555-0123"],
+    [250, 250, "Software Engineer"],
+    [250, 300, "Engineering Department"]
+]
+
+multi_edit_tool(locs=contact_data)
+```
+
+### Spreadsheet-Style Data Entry
+
+```python
+# Fill multiple cells in a grid
+multi_edit_tool(
+    locs=[
+        [200, 150, "Q1 2024"],
+        [300, 150, "$50,000"],
+        [400, 150, "Complete"],
+        [200, 200, "Q2 2024"],
+        [300, 200, "$75,000"],
+        [400, 200, "In Progress"]
+    ]
+)
+```
+
+## Return Value
+
+Returns a success message listing all edited fields:
+
+```
+Multi-edited elements at: (300,150) with text 'John Doe', (300,200) with text 'john@example.com', (300,250) with text '555-1234'
+```
+
+## Working with Snapshot
+
+To use the `labels` parameter, you must first call the Snapshot tool:
+
+```python
+# Step 1: Take snapshot to get UI element labels
+snapshot_result = state_tool(use_ui_tree=True)
+
+# Step 2: Review snapshot output to identify input field labels
+# Look for text fields, text boxes, and editable elements
+
+# Step 3: Use labels in MultiEdit
+multi_edit_tool(
+    labels=[
+        [15, "First text"],
+        [16, "Second text"],
+        [17, "Third text"]
+    ]
+)
+```
+
+## Error Handling
+
+```python
+# Neither locs nor labels provided
+"ValueError: Either locs or labels must be provided."
+
+# Desktop state not available when using labels
+"ValueError: Desktop state is empty. Please call Snapshot first."
+
+# Invalid label format
+"ValueError: Each label item must be [label, text]. Invalid: [15]"
+
+# Failed to find element
+"ValueError: Failed to process label item [99, 'text']: <error details>"
+```
+
+## Coordinates Format
+
+<Info>
+**locs format**: `[[x, y, text], [x, y, text], ...]`
+
+Each entry must have exactly **three elements**:
+1. X coordinate (integer)
+2. Y coordinate (integer)
+3. Text to type (string)
+
+Example:
+```python
+locs = [
+    [100, 200, "Hello"],
+    [100, 250, "World"]
+]
+```
+</Info>
+
+## Labels Format
+
+<Info>
+**labels format**: `[[label, text], [label, text], ...]`
+
+Each entry must have exactly **two elements**:
+1. Element label/ID from Snapshot (integer)
+2. Text to type (string)
+
+Example:
+```python
+labels = [
+    [42, "Hello"],
+    [43, "World"]
+]
+```
+</Info>
+
+## Best Practices
+
+<Tip>
+**Tips for effective multi-editing:**
+
+1. **Use labels when possible**: Labels from Snapshot are more reliable than hardcoded coordinates
+2. **Take fresh snapshots**: Always call Snapshot immediately before using labels to ensure accuracy
+3. **Verify field order**: Check that your data matches the order of fields on the form
+4. **Handle focus properly**: Ensure no overlapping windows or pop-ups interfere with field access
+5. **Consider field validation**: Some fields may have input restrictions (e.g., numeric only, email format)
+6. **Test with small batches**: Verify the tool works with 1-2 fields before filling large forms
+</Tip>
+
+## Common Use Cases
+
+### User Registration Forms
+```python
+# Complete signup form
+multi_edit_tool(
+    labels=[
+        [10, "johndoe"],              # Username
+        [11, "john@example.com"],     # Email
+        [12, "SecurePass123!"],       # Password
+        [13, "SecurePass123!"],       # Confirm password
+        [14, "John"],                 # First name
+        [15, "Doe"]                   # Last name
+    ]
+)
+```
+
+### Survey/Questionnaire
+```python
+# Fill out multiple response fields
+multi_edit_tool(
+    locs=[
+        [300, 200, "Very satisfied"],
+        [300, 300, "Daily"],
+        [300, 400, "Yes, definitely"],
+        [300, 500, "Excellent customer service"]
+    ]
+)
+```
+
+### Shipping Information
+```python
+# Fill shipping address
+multi_edit_tool(
+    labels=[
+        [20, "John Doe"],
+        [21, "123 Main Street"],
+        [22, "Apt 4B"],
+        [23, "New York"],
+        [24, "NY"],
+        [25, "10001"]
+    ]
+)
+```
+
+### Batch Configuration
+```python
+# Configure multiple settings
+multi_edit_tool(
+    locs=[
+        [400, 150, "Production"],     # Environment
+        [400, 200, "https://api.example.com"],  # API URL
+        [400, 250, "30"],             # Timeout
+        [400, 300, "1000"]            # Max connections
+    ]
+)
+```
+
+## Comparison with Type Tool
+
+| Feature | MultiEdit | Type |
+|---------|-----------|------|
+| **Purpose** | Fill multiple fields | Fill single field |
+| **Parameters** | Array of locations/texts | Single location + text |
+| **Use case** | Forms, batch entry | Individual field editing |
+| **Efficiency** | High for multiple fields | Best for single field |
+
+## Keywords
+
+form filling, multi-edit, batch input, multiple fields, text entry, data entry
+
+## Tool Annotations
+
+- **Read-only**: No
+- **Destructive**: Yes
+- **Idempotent**: No
+- **Open-world**: No

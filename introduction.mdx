@@ -1,0 +1,136 @@
+---
+title: "Introduction"
+description: "Learn about Windows-MCP and how it bridges AI agents with Windows OS automation"
+---
+
+## What is Windows-MCP?
+
+Windows-MCP is a lightweight, open-source MCP (Model Context Protocol) server that enables seamless integration between AI agents and the Windows operating system. It acts as a bridge between Large Language Models (LLMs) and Windows, allowing agents to perform real desktop automation tasks.
+
+## Overview
+
+Windows-MCP provides **17 powerful tools** that give AI agents the ability to:
+
+- **Interact with Windows UI** - Click buttons, type text, scroll, and navigate applications
+- **Manage files and folders** - Read, write, copy, move, delete, and search files
+- **Control applications** - Launch apps, resize windows, switch between programs
+- **Execute system commands** - Run PowerShell scripts with full system access
+- **Automate browsers** - Extract web content using DOM mode for clean data
+- **Monitor processes** - List, filter, and terminate running applications
+- **Access system resources** - Clipboard, registry, notifications, and more
+
+## Key Capabilities
+
+<CardGroup cols={2}>
+  <Card title="LLM-Agnostic" icon="brain">
+    Works with any LLM that supports MCP. No vision models or fine-tuning required.
+  </Card>
+  <Card title="Accessibility Tree" icon="sitemap">
+    Real-time UI element detection using Windows accessibility APIs for precise automation.
+  </Card>
+  <Card title="Multi-Display Support" icon="display">
+    Handle multiple monitors with coordinate mapping and display-specific snapshots.
+  </Card>
+  <Card title="DOM Mode" icon="code">
+    Special browser mode that extracts only web page content, filtering out browser UI.
+  </Card>
+</CardGroup>
+
+## How It Works
+
+1. **MCP Server** - Windows-MCP runs as an MCP server on your Windows machine
+2. **Tool Registration** - It exposes 17 tools via the Model Context Protocol
+3. **LLM Integration** - Your MCP client (Claude Desktop, Gemini CLI, etc.) connects to the server
+4. **AI-Driven Automation** - The LLM calls tools to perform actions on your behalf
+
+## Architecture
+
+Windows-MCP follows a layered service architecture:
+
+- **Desktop Service** - High-level orchestrator for window operations, screenshots, and input
+- **Tree Service** - Captures Windows accessibility tree to identify interactive UI elements
+- **UIAutomation Wrapper** - Low-level abstraction over Windows UIAutomation COM API
+- **WatchDog Service** - Background thread monitoring UI focus changes in real-time
+- **Analytics Service** - Optional PostHog telemetry (disabled with `ANONYMIZED_TELEMETRY=false`)
+
+<Card title="Learn More About Architecture" icon="diagram-project" href="/concepts/architecture">
+  Deep dive into Windows-MCP's internal design and components
+</Card>
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Desktop Automation">
+    Automate repetitive Windows tasks like filing documents, updating spreadsheets, or navigating complex application workflows.
+  </Accordion>
+  <Accordion title="QA Testing">
+    Let AI agents perform UI testing by clicking through application flows, filling forms, and validating outputs.
+  </Accordion>
+  <Accordion title="Data Entry">
+    Automate data entry across multiple applications with multi-edit and multi-select tools.
+  </Accordion>
+  <Accordion title="Web Scraping">
+    Extract structured data from websites using DOM mode for clean, browser-UI-free content.
+  </Accordion>
+  <Accordion title="System Administration">
+    Execute PowerShell commands, manage processes, and configure registry settings via AI agents.
+  </Accordion>
+</AccordionGroup>
+
+## System Requirements
+
+<Note>
+  **Operating Systems**: Windows 7, 8, 8.1, 10, or 11
+</Note>
+
+**Prerequisites:**
+- Python 3.13 or higher
+- UV package manager (`pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- English as default Windows language (recommended for App tool compatibility)
+
+## Performance
+
+Windows-MCP is designed for real-time interaction:
+
+- **Action Latency**: 0.2-0.9 seconds between actions (click to click, type to type)
+- **Screenshot Resolution**: Capped at 1920x1080 for token efficiency
+- **UI Element Fetching**: Retry logic with 3 max retries for reliability
+- **Multi-Threaded**: ThreadPoolExecutor for parallel UI tree traversal
+
+<Tip>
+  Latency varies based on system load, number of active applications, and LLM inference speed.
+</Tip>
+
+## Community & Support
+
+<CardGroup cols={2}>
+  <Card title="GitHub Discussions" icon="github" href="https://github.com/CursorTouch/Windows-MCP">
+    Report issues, request features, and contribute to the project
+  </Card>
+  <Card title="Discord Community" icon="discord" href="https://discord.com/invite/Aue9Yj2VzS">
+    Join our community to get help and share automation workflows
+  </Card>
+  <Card title="Twitter/X" icon="x-twitter" href="https://x.com/CursorTouch">
+    Follow @CursorTouch for updates and announcements
+  </Card>
+  <Card title="Security Policy" icon="shield-halved" href="/security/overview">
+    Review security considerations and best practices
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<Steps>
+  <Step title="Install Windows-MCP">
+    Follow the [installation guide](/installation) to set up Windows-MCP via PyPI or from source.
+  </Step>
+  <Step title="Configure Your MCP Client">
+    Connect Windows-MCP to [Claude Desktop](/configuration/claude-desktop), [Gemini CLI](/configuration/gemini), or another MCP client.
+  </Step>
+  <Step title="Explore the Tools">
+    Learn about each of the [17 MCP tools](/tools/snapshot) and what they can do.
+  </Step>
+  <Step title="Read Security Guidelines">
+    Review the [security overview](/security/overview) before deploying in production environments.
+  </Step>
+</Steps>

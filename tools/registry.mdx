@@ -1,0 +1,328 @@
+---
+title: Registry
+description: Read and write the Windows Registry
+---
+
+The Registry tool provides four modes for managing Windows Registry keys and values: get, set, delete, and list. It uses PowerShell-format paths (e.g., `HKCU:\Software\MyApp`).
+
+## Parameters
+
+<ParamField path="mode" type="string" required>
+  Operation mode. One of:
+  - `get`: Read a registry value
+  - `set`: Create or update a registry value
+  - `delete`: Remove a registry value or key
+  - `list`: List values and sub-keys under a path
+</ParamField>
+
+<ParamField path="path" type="string" required>
+  Registry path in PowerShell format.
+  
+  Common root keys:
+  - `HKCU:\` - HKEY_CURRENT_USER
+  - `HKLM:\` - HKEY_LOCAL_MACHINE
+  - `HKCR:\` - HKEY_CLASSES_ROOT
+  - `HKU:\` - HKEY_USERS
+  - `HKCC:\` - HKEY_CURRENT_CONFIG
+  
+  Example: `HKCU:\Software\Microsoft\Windows\CurrentVersion`
+</ParamField>
+
+<ParamField path="name" type="string">
+  Name of the registry value.
+  - Required for `get` and `set` modes
+  - Optional for `delete` mode (if omitted, deletes the entire key)
+</ParamField>
+
+<ParamField path="value" type="string">
+  Value to write. Required for `set` mode.
+</ParamField>
+
+<ParamField path="type" type="string" default="String">
+  Registry value type for `set` mode. One of:
+  - `String`: REG_SZ - Text string
+  - `DWord`: REG_DWORD - 32-bit number
+  - `QWord`: REG_QWORD - 64-bit number
+  - `Binary`: REG_BINARY - Binary data
+  - `MultiString`: REG_MULTI_SZ - Multiple strings
+  - `ExpandString`: REG_EXPAND_SZ - Expandable string (with environment variables)
+  
+  Default: `String`
+</ParamField>
+
+## Mode Details
+
+### Get Mode
+
+Read a registry value.
+
+```python
+# Read a string value
+registry_tool(
+    mode="get",
+    path="HKCU:\\Software\\MyApp",
+    name="Version"
+)
+
+# Read system setting
+registry_tool(
+    mode="get",
+    path="HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion",
+    name="ProgramFilesDir"
+)
+```
+
+### Set Mode
+
+Create or update a registry value.
+
+```python
+# Set string value
+registry_tool(
+    mode="set",
+    path="HKCU:\\Software\\MyApp",
+    name="AppName",
+    value="My Application",
+    type="String"
+)
+
+# Set DWORD value
+registry_tool(
+    mode="set",
+    path="HKCU:\\Software\\MyApp\\Settings",
+    name="MaxConnections",
+    value="100",
+    type="DWord"
+)
+
+# Set expandable string with environment variable
+registry_tool(
+    mode="set",
+    path="HKCU:\\Environment",
+    name="MyPath",
+    value="%USERPROFILE%\\Documents",
+    type="ExpandString"
+)
+
+# Set binary value
+registry_tool(
+    mode="set",
+    path="HKCU:\\Software\\MyApp",
+    name="BinaryData",
+    value="01,02,03,04",
+    type="Binary"
+)
+```
+
+### Delete Mode
+
+Remove a registry value or entire key.
+
+```python
+# Delete a specific value
+registry_tool(
+    mode="delete",
+    path="HKCU:\\Software\\MyApp",
+    name="OldSetting"
+)
+
+# Delete an entire key and all its values
+registry_tool(
+    mode="delete",
+    path="HKCU:\\Software\\MyApp\\TempSettings"
+)
+```
+
+<Warning>
+Deleting registry keys or values can affect application behavior or system stability. Always backup the registry before making changes.
+</Warning>
+
+### List Mode
+
+List all values and sub-keys under a registry path.
+
+```python
+# List all values and sub-keys
+registry_tool(
+    mode="list",
+    path="HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
+)
+
+# List application settings
+registry_tool(
+    mode="list",
+    path="HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion"
+)
+```
+
+The output includes:
+- Sub-key names (child keys under the specified path)
+- Value names and their data
+- Value types
+
+## Usage Examples
+
+### Managing Application Settings
+
+```python
+# Create application registry key structure
+registry_tool(
+    mode="set",
+    path="HKCU:\\Software\\MyCompany\\MyApp",
+    name="Version",
+    value="1.0.0",
+    type="String"
+)
+
+registry_tool(
+    mode="set",
+    path="HKCU:\\Software\\MyCompany\\MyApp",
+    name="InstallDate",
+    value="2024-01-15",
+    type="String"
+)
+
+# Read settings
+version = registry_tool(
+    mode="get",
+    path="HKCU:\\Software\\MyCompany\\MyApp",
+    name="Version"
+)
+```
+
+### Managing Startup Programs
+
+```python
+# List startup programs
+registry_tool(
+    mode="list",
+    path="HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
+)
+
+# Add program to startup
+registry_tool(
+    mode="set",
+    path="HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    name="MyApp",
+    value="C:\\Program Files\\MyApp\\MyApp.exe",
+    type="String"
+)
+
+# Remove program from startup
+registry_tool(
+    mode="delete",
+    path="HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    name="MyApp"
+)
+```
+
+### Working with Environment Variables
+
+```python
+# Set user environment variable
+registry_tool(
+    mode="set",
+    path="HKCU:\\Environment",
+    name="MY_CUSTOM_PATH",
+    value="C:\\CustomTools",
+    type="String"
+)
+
+# Read environment variable
+registry_tool(
+    mode="get",
+    path="HKCU:\\Environment",
+    name="PATH"
+)
+```
+
+### Configuring System Settings
+
+```python
+# Read Windows version
+registry_tool(
+    mode="get",
+    path="HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+    name="ProductName"
+)
+
+# Check installation path
+registry_tool(
+    mode="get",
+    path="HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion",
+    name="ProgramFilesDir"
+)
+```
+
+## Registry Value Types
+
+| Type | Description | Example |
+|------|-------------|----------|
+| `String` | Text string (REG_SZ) | `"Hello World"` |
+| `DWord` | 32-bit number (REG_DWORD) | `"1234"` |
+| `QWord` | 64-bit number (REG_QWORD) | `"9876543210"` |
+| `Binary` | Binary data (REG_BINARY) | `"01,FF,A3"` |
+| `MultiString` | Multiple strings (REG_MULTI_SZ) | `"Value1\\0Value2\\0"` |
+| `ExpandString` | Expandable string (REG_EXPAND_SZ) | `"%USERPROFILE%\\Documents"` |
+
+## Error Handling
+
+The tool returns descriptive error messages:
+
+```python
+# Missing required parameter for get
+"Error: name parameter is required for get mode."
+
+# Missing required parameters for set
+"Error: name parameter is required for set mode."
+"Error: value parameter is required for set mode."
+
+# Invalid mode
+'Error: mode must be "get", "set", "delete", or "list".'
+
+# General registry errors
+"Error accessing registry: <error details>"
+```
+
+## Security Considerations
+
+<Warning>
+Modifying the Windows Registry can have serious consequences:
+
+- **System Instability**: Incorrect changes can make Windows unstable or unbootable
+- **Application Errors**: Deleting application settings may cause programs to malfunction
+- **Security Risks**: Some registry keys control security settings
+- **Permissions**: Changes to `HKLM` typically require Administrator privileges
+
+**Best Practices:**
+- Always backup the registry before making changes
+- Test changes in a non-production environment first
+- Use the most specific path possible
+- Avoid modifying system-critical keys unless absolutely necessary
+</Warning>
+
+## Common Registry Locations
+
+### User Settings
+- `HKCU:\Software` - User-installed applications
+- `HKCU:\Environment` - User environment variables
+- `HKCU:\Software\Microsoft\Windows\CurrentVersion\Run` - User startup programs
+
+### System Settings
+- `HKLM:\SOFTWARE` - System-wide application settings
+- `HKLM:\SYSTEM\CurrentControlSet\Services` - Windows services
+- `HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion` - Windows configuration
+
+### File Associations
+- `HKCR:\` - File type associations and COM objects
+
+## Keywords
+
+regedit, registry key, HKEY, HKCU, HKLM, Windows settings, registry value
+
+## Tool Annotations
+
+- **Read-only**: No (get and list modes are read-only)
+- **Destructive**: Yes
+- **Idempotent**: No
+- **Open-world**: No

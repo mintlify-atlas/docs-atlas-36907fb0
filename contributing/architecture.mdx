@@ -1,0 +1,270 @@
+---
+title: Architecture Overview
+description: Deep dive into Windows-MCP's layered service architecture and design patterns
+---
+
+## Project Overview
+
+Windows-MCP is a Python MCP (Model Context Protocol) server that bridges AI LLM agents with the Windows OS, enabling direct desktop automation. It exposes 15 tools via FastMCP for controlling Windows applications, UI elements, and system operations.
+
+## Technology Stack
+
+- **Language**: Python 3.13+
+- **Package Manager**: UV (not pip)
+- **Build Backend**: Hatchling
+- **MCP Framework**: FastMCP
+- **Code Quality**: Ruff (formatter and linter)
+
+## Layered Service Architecture
+
+The codebase follows a layered service architecture under `src/windows_mcp/`, with clear separation of concerns:
+
+```
+src/windows_mcp/
+├── __main__.py          # Entry point & tool registration
+├── desktop/             # High-level orchestration
+│   ├── service.py       # Desktop service
+│   └── views.py         # Data models
+├── tree/                # UI element discovery
+│   ├── service.py       # Tree service
+│   ├── views.py         # Tree data models
+│   └── config.py        # Control type configs
+├── uia/                 # Windows UIAutomation wrapper
+│   ├── core.py          # Main automation object
+│   ├── controls.py      # Control-specific logic
+│   ├── patterns.py      # UIAutomation patterns
+│   ├── enums.py         # COM enumerations
+│   └── events.py        # Event subscriptions
+├── watchdog/            # UI focus monitoring
+│   └── service.py       # WatchDog service
+├── vdm/                 # Virtual Desktop Manager
+│   └── core.py          # Desktop tracking
+└── analytics.py         # Optional telemetry
+```
+
+## Core Components
+
+### Entry Point (`__main__.py`)
+
+The entry point registers all 15 MCP tools on a FastMCP server instance:
+
+- Uses an async lifespan to initialize Desktop, WatchDog, and Analytics services
+- Each tool function delegates to `Desktop` methods
+- The `@with_analytics` decorator wraps tools for optional telemetry
+- Supports multiple transports: stdio (default), SSE, and streamable HTTP
+
+**Available Tools:**
+- App, Shell, Snapshot, Click, Type, Scroll, Move, Shortcut, Wait, Scrape
+- MultiSelect, MultiEdit, Clipboard, Process, Notification, Registry
+
+### Desktop Service (`desktop/service.py`)
+
+The high-level orchestrator that manages:
+
+- **Window operations**: Launch, resize, switch between applications
+- **Screenshots**: Captures desktop state (capped at 1920x1080 for token efficiency)
+- **Mouse/keyboard actions**: Click, type, scroll, shortcuts
+- **Clipboard operations**: Read and write clipboard content
+- **Interface with Tree service**: For UI element discovery and interaction
+
+**Data Models** (`desktop/views.py`):
+- `DesktopState`: Complete desktop state representation
+- `Window`: Window metadata and properties
+- `Size`: Window dimensions
+- `BoundingBox`: Element coordinates
+- `Status`: Operation status results
+
+### Tree Service (`tree/service.py`)
+
+Captures the Windows accessibility tree from active and background windows:
+
+- **Identifies interactive elements**: Buttons, text fields, checkboxes, etc.
+- **Detects scrollable areas**: For precise scroll targeting
+- **Multi-threaded traversal**: Uses `ThreadPoolExecutor` for performance
+- **Retry logic**: `THREAD_MAX_RETRIES=3` for robust UI element fetching
+- **Fuzzy matching**: Uses `thefuzz` library for element name matching
+
+**Data Models** (`tree/views.py`):
+- `TreeElementNode`: Interactive UI element representation
+- `ScrollElementNode`: Scrollable region metadata
+- `TreeState`: Complete accessibility tree state
+
+**Configuration** (`tree/config.py`):
+- Control type configurations for different UI element types
+- Defines which elements are interactive vs. informational
+
+### UIAutomation Wrapper (`uia/`)
+
+Low-level abstraction over the Windows UIAutomation COM API via `comtypes`:
+
+**Components:**
+- **`core.py`**: Wraps the main UIAutomation object
+- **`controls.py`**: Control-specific logic for different UI element types
+- **`patterns.py`**: Wraps UIAutomation patterns (Invoke, Value, Text, etc.)
+- **`enums.py`**: COM enumerations for control types and patterns
+- **`events.py`**: Handles UIAutomation event subscriptions
+
+**Key Features:**
+- Same coordinate space as BoundingRectangle (no DPI mismatch issues)
+- Direct COM API access for reliable Windows UI automation
+- Pattern-based interaction model for flexibility
+
+### WatchDog Service (`watchdog/service.py`)
+
+Runs in a separate thread monitoring UI focus changes:
+
+- **UIAutomation event subscriptions**: Listens for focus change events
+- **Notifies Tree service**: Keeps accessibility tree current with UI state
+- **Background monitoring**: Non-blocking thread-based architecture
+- **Real-time updates**: Ensures snapshot data reflects current state
+
+### Virtual Desktop Manager (`vdm/core.py`)
+
+Tracks which windows belong to which Windows virtual desktop:
+
+- **Windows 10/11 support**: Leverages virtual desktop APIs
+- **Window-desktop mapping**: Maintains current desktop context
+- **Multi-desktop awareness**: Enables cross-desktop automation
+
+### Analytics (`analytics.py`)
+
+Optional PostHog telemetry system:
+
+- **Disabled by default**: Set `ANONYMIZED_TELEMETRY=false` to opt out
+- **Privacy-focused**: Tracks only tool names and errors
+- **No sensitive data**: Arguments and outputs are never collected
+- **Decorator-based**: `@with_analytics` wraps tool functions
+
+## Key Design Patterns
+
+### Service-Based Architecture
+
+Each major component is implemented as a service:
+- Clear separation of concerns
+- Easy to test and maintain
+- Composable services for complex operations
+
+### Data Models as Views
+
+Pydantic-based data models in `views.py` files:
+- Type-safe data structures
+- Validation at runtime
+- Easy serialization for MCP protocol
+
+### Async/Await for I/O
+
+Async patterns for non-blocking operations:
+- FastMCP server uses async handlers
+- Lifespan management for service initialization
+- Efficient concurrent operations
+
+### Thread Pools for CPU-Bound Work
+
+UIAutomation tree traversal uses `ThreadPoolExecutor`:
+- Parallel element discovery
+- Faster snapshot generation
+- Non-blocking UI interactions
+
+## Design Details
+
+### Screenshot Optimization
+
+- **Resolution cap**: 1920x1080 maximum for token efficiency
+- **Smart scaling**: Maintains aspect ratio while reducing size
+- **Format**: Base64-encoded PNG for MCP transport
+
+### Browser Detection
+
+Special handling for web browsers:
+- **Detected browsers**: Chrome, Edge, Firefox
+- **DOM mode**: `use_dom=True` extracts web page content only
+- **Filters out**: Browser UI elements (tabs, address bar, etc.)
+- **Cleaner automation**: Focus on web content, not browser chrome
+
+### Input Handling
+
+- **Mouse/keyboard**: Uses UIAutomation for consistent coordinates
+- **No DPI mismatch**: Same coordinate space as UI elements
+- **Reliable positioning**: Direct Windows API calls
+
+### Retry Logic
+
+Robust error handling throughout:
+- **Tree fetching**: Up to 3 retries for UI element discovery
+- **Graceful degradation**: Returns partial results on failure
+- **Error context**: Detailed error messages for debugging
+
+## Transport Options
+
+Windows-MCP supports three transport modes:
+
+| Transport | Use Case | Command |
+|-----------|----------|----------|
+| **stdio** | Default, for Claude Desktop and similar clients | `uvx windows-mcp` |
+| **SSE** | Server-Sent Events for network access | `uvx windows-mcp --transport sse --host localhost --port 8000` |
+| **streamable-http** | HTTP streaming (recommended for production) | `uvx windows-mcp --transport streamable-http --host localhost --port 8000` |
+
+## Security Architecture
+
+<Warning>
+  This server has **full system access** with no sandboxing. Tools like Shell and App can perform irreversible operations.
+</Warning>
+
+### Security Principles
+
+1. **No sandboxing**: Full Windows system access
+2. **Reversible operations**: Prefer actions that can be undone
+3. **VM deployment**: Recommended target is Windows VM or Sandbox
+4. **Audit logging**: Track all operations for security review
+5. **Minimal privileges**: Run with least necessary permissions
+
+### Recommended Deployment
+
+- **Development**: Windows Sandbox or local VM
+- **Testing**: Dedicated test VMs
+- **Production**: Isolated VMs with network restrictions
+- **Remote mode**: Use windowsmcp.io for cloud-hosted automation
+
+## Performance Considerations
+
+### Latency
+
+Typical action latency ranges from **0.2 to 0.9 seconds**, varying based on:
+- Number of active applications
+- System load and resources
+- LLM inference speed
+- UI complexity
+
+### Optimization Strategies
+
+1. **Screenshot capping**: Max 1920x1080 reduces token usage
+2. **Parallel tree traversal**: ThreadPoolExecutor for speed
+3. **Caching**: Reuse accessibility tree data when possible
+4. **Selective snapshots**: Use `display=[0]` to limit to specific screens
+
+## Extending the Architecture
+
+### Adding New Tools
+
+1. Define tool function in `__main__.py`
+2. Delegate to appropriate service (Desktop, Tree, etc.)
+3. Add `@with_analytics` decorator if telemetry desired
+4. Update tool documentation and manifest
+
+### Adding New Services
+
+1. Create service module under `src/windows_mcp/`
+2. Define data models in `views.py`
+3. Initialize in lifespan manager
+4. Wire up to Desktop or other services
+
+### Modifying UIAutomation Behavior
+
+1. Extend `uia/patterns.py` for new patterns
+2. Update `uia/controls.py` for control-specific logic
+3. Add enums to `uia/enums.py` as needed
+4. Test thoroughly in safe VM environment
+
+<Card title="Ready to Contribute?" icon="code" href="/contributing/setup">
+  Set up your development environment and start coding
+</Card>

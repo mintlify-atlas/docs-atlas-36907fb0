@@ -1,0 +1,682 @@
+---
+title: Process Management
+description: Managing running processes and applications using the Process tool
+---
+
+## Overview
+
+The **Process** tool provides capabilities for monitoring and controlling running processes on Windows. It supports two modes: **list** (view processes) and **kill** (terminate processes).
+
+## Process Tool Modes
+
+| Mode | Purpose | Key Parameters |
+|------|---------|----------------|
+| `list` | View running processes | `name`, `sort_by`, `limit` |
+| `kill` | Terminate processes | `pid` or `name`, `force` |
+
+## Listing Processes
+
+### View All Processes
+
+```javascript
+// List top 20 processes by memory usage
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list"
+  }
+});
+```
+
+**Output:**
+```
+Processes (20 shown):
+PID    Name                    CPU%    Memory
+4521   chrome.exe              12.3%   850.5 MB
+8934   code.exe                5.2%    620.3 MB
+1234   firefox.exe             3.1%    545.2 MB
+5678   explorer.exe            1.5%    320.1 MB
+9012   Discord.exe             2.3%    285.7 MB
+...
+```
+
+### Filter by Process Name
+
+```javascript
+// Find all Chrome processes
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "chrome"  // Fuzzy match
+  }
+});
+```
+
+**Output:**
+```
+Processes (5 shown):
+PID    Name                    CPU%    Memory
+4521   chrome.exe              12.3%   850.5 MB
+4532   chrome.exe              3.2%    220.1 MB
+4545   chrome.exe              1.8%    180.5 MB
+4556   chrome.exe              2.1%    165.3 MB
+4567   chrome.exe              0.5%    95.2 MB
+```
+
+### Sort by CPU Usage
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    sort_by: "cpu",  // "memory" (default), "cpu", or "name"
+    limit: 10
+  }
+});
+```
+
+**Output:**
+```
+Processes (10 shown):
+PID    Name                    CPU%    Memory
+4521   chrome.exe              12.3%   850.5 MB
+8934   code.exe                5.2%    620.3 MB
+1234   firefox.exe             3.1%    545.2 MB
+9012   Discord.exe             2.3%    285.7 MB
+5678   explorer.exe            1.5%    320.1 MB
+...
+```
+
+### Sort by Name
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    sort_by: "name"  // Alphabetical order
+  }
+});
+```
+
+**Output:**
+```
+Processes (20 shown):
+PID    Name                    CPU%    Memory
+8934   code.exe                5.2%    620.3 MB
+4521   chrome.exe              12.3%   850.5 MB
+9012   Discord.exe             2.3%    285.7 MB
+5678   explorer.exe            1.5%    320.1 MB
+1234   firefox.exe             3.1%    545.2 MB
+...
+```
+
+### Limit Results
+
+```javascript
+// Show top 5 memory consumers
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    sort_by: "memory",
+    limit: 5
+  }
+});
+```
+
+## Terminating Processes
+
+### Kill by PID
+
+```javascript
+// Terminate specific process by PID
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "kill",
+    pid: 4521
+  }
+});
+```
+
+**Output:**
+```
+Terminated: chrome.exe (PID 4521)
+```
+
+### Kill by Name
+
+```javascript
+// Terminate all processes with matching name
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "kill",
+    name: "notepad.exe"
+  }
+});
+```
+
+**Output:**
+```
+Terminated: notepad.exe (PID 8234), notepad.exe (PID 8567)
+```
+
+### Force Kill
+
+Use `force: true` to immediately kill unresponsive processes:
+
+```javascript
+// Force kill frozen application
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "kill",
+    name: "frozen_app.exe",
+    force: true  // SIGKILL instead of SIGTERM
+  }
+});
+```
+
+**Output:**
+```
+Force killed: frozen_app.exe (PID 9876)
+```
+
+<Warning>
+`force: true` terminates processes immediately without allowing graceful shutdown. Use for unresponsive applications only.
+</Warning>
+
+## Common Workflows
+
+### Find and Kill Resource-Heavy Process
+
+```javascript
+// 1. List processes by CPU usage
+const processes = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    sort_by: "cpu",
+    limit: 10
+  }
+});
+
+// 2. Identify problematic process
+// Processes (10 shown):
+// PID    Name                CPU%    Memory
+// 7234   runaway.exe         95.2%   1.2 GB
+
+// 3. Terminate it
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "kill",
+    pid: 7234
+  }
+});
+
+// 4. Verify it's gone
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "runaway"
+  }
+});
+// Output: No processes found matching runaway.
+```
+
+### Clean Up Duplicate Processes
+
+```javascript
+// 1. Find all instances
+const chrome = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "chrome"
+  }
+});
+// Shows 10+ chrome.exe processes
+
+// 2. Kill all Chrome processes
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "kill",
+    name: "chrome.exe"
+  }
+});
+// Terminated: chrome.exe (PID 4521), chrome.exe (PID 4532), ...
+
+// 3. Restart Chrome cleanly
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "App",
+  arguments: {
+    mode: "launch",
+    name: "Chrome"
+  }
+});
+```
+
+### Monitor Process Before Action
+
+```javascript
+// 1. Check if app is running
+const check = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "myapp"
+  }
+});
+
+if (check.includes("No processes found")) {
+  // 2. App not running, launch it
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "App",
+    arguments: {
+      mode: "launch",
+      name: "MyApp"
+    }
+  });
+} else {
+  // 3. App running, restart it
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Process",
+    arguments: {
+      mode: "kill",
+      name: "myapp.exe"
+    }
+  });
+  
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Wait",
+    arguments: { duration: 2 }
+  });
+  
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "App",
+    arguments: {
+      mode: "launch",
+      name: "MyApp"
+    }
+  });
+}
+```
+
+### Process Health Check
+
+```javascript
+// Check if critical services are running
+const services = ["explorer", "winlogon", "services"];
+
+for (const service of services) {
+  const result = await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Process",
+    arguments: {
+      mode: "list",
+      name: service
+    }
+  });
+  
+  if (result.includes("No processes found")) {
+    console.log(`WARNING: ${service} is not running!`);
+  } else {
+    console.log(`OK: ${service} is running`);
+  }
+}
+```
+
+### Memory Audit
+
+```javascript
+// Find top memory consumers
+const memoryReport = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    sort_by: "memory",
+    limit: 20
+  }
+});
+
+// Parse and identify processes using > 500 MB
+// (In real implementation, you'd parse the table)
+// If any process > 1GB, consider killing it
+```
+
+## Integration with Other Tools
+
+### Process + App Tool
+
+```javascript
+// Check before launching
+const running = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "calculator"
+  }
+});
+
+if (running.includes("No processes found")) {
+  // Launch if not running
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "App",
+    arguments: {
+      mode: "launch",
+      name: "Calculator"
+    }
+  });
+} else {
+  // Switch to existing instance
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "App",
+    arguments: {
+      mode: "switch",
+      name: "Calculator"
+    }
+  });
+}
+```
+
+### Process + PowerShell
+
+For advanced process queries:
+
+```javascript
+// Get detailed process information with PowerShell
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "PowerShell",
+  arguments: {
+    command: "Get-Process chrome | Select-Object Id,Name,CPU,PM,StartTime | ConvertTo-Csv -NoTypeInformation"
+  }
+});
+```
+
+### Process + Notification
+
+```javascript
+// Monitor and alert on high CPU
+const processes = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    sort_by: "cpu",
+    limit: 1
+  }
+});
+
+// If top process > 80% CPU, send notification
+if (processes.includes("95.2%")) {
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Notification",
+    arguments: {
+      title: "High CPU Usage",
+      message: "A process is consuming excessive CPU resources"
+    }
+  });
+}
+```
+
+## Error Handling
+
+### Process Not Found
+
+```javascript
+// Output: No process with PID 99999 found.
+```
+
+### Access Denied
+
+```javascript
+// Output: Access denied to kill PID 4. Try running as administrator.
+```
+
+Some system processes require administrator privileges to terminate.
+
+### No Matching Processes
+
+```javascript
+// Output: No processes found matching "nonexistent".
+```
+
+## Process Name Matching
+
+The `name` parameter uses **fuzzy matching** (60% threshold):
+
+```javascript
+// All of these will match "chrome.exe":
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "chrome"     // Matches
+  }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "Chrome"     // Case-insensitive
+  }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "chrome.exe" // Exact match
+  }
+});
+```
+
+## Best Practices
+
+### 1. List Before Killing
+
+Always verify what you're about to terminate:
+
+```javascript
+// GOOD: Check first
+const processes = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "myapp"
+  }
+});
+// Verify it's the right process
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "kill",
+    pid: 1234  // Specific PID from list
+  }
+});
+
+// RISKY: Blind kill
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "kill",
+    name: "app"  // Might kill wrong process
+  }
+});
+```
+
+### 2. Use PID for Precision
+
+When possible, kill by PID rather than name:
+
+```javascript
+// GOOD: Specific process
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "kill",
+    pid: 4521  // Exact process
+  }
+});
+
+// RISKY: Kills all matching processes
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "kill",
+    name: "chrome.exe"  // Kills ALL Chrome processes
+  }
+});
+```
+
+### 3. Graceful Before Forceful
+
+Try normal termination before force kill:
+
+```javascript
+// 1. Try graceful shutdown
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "kill",
+    pid: 1234,
+    force: false
+  }
+});
+
+// 2. Wait a moment
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 3 }
+});
+
+// 3. Check if still running
+const stillRunning = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "stubborn_app"
+  }
+});
+
+// 4. Force kill if necessary
+if (!stillRunning.includes("No processes found")) {
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Process",
+    arguments: {
+      mode: "kill",
+      pid: 1234,
+      force: true
+    }
+  });
+}
+```
+
+### 4. Don't Kill Critical Processes
+
+Avoid terminating system processes:
+
+```javascript
+// NEVER kill these:
+const criticalProcesses = [
+  "csrss.exe",      // Client/Server Runtime
+  "winlogon.exe",   // Windows Logon
+  "services.exe",   // Service Control Manager
+  "lsass.exe",      // Local Security Authority
+  "smss.exe",       // Session Manager
+  "wininit.exe",    // Windows Initialization
+  "explorer.exe"    // Windows Explorer (usually safe, but be careful)
+];
+
+// Check before killing
+if (criticalProcesses.includes(processName.toLowerCase())) {
+  console.log("WARNING: This is a critical system process!");
+  // Abort or ask for confirmation
+}
+```
+
+### 5. Monitor Regularly, Act Deliberately
+
+```javascript
+// Set up monitoring
+setInterval(async () => {
+  const highCpu = await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Process",
+    arguments: {
+      mode: "list",
+      sort_by: "cpu",
+      limit: 3
+    }
+  });
+  
+  console.log("Top CPU consumers:", highCpu);
+  // Alert but don't auto-kill
+}, 30000); // Every 30 seconds
+```
+
+## Limitations
+
+### Access Control
+
+- System processes may require administrator privileges
+- Protected processes cannot be terminated
+- Some services are automatically restarted by Windows
+
+### Process Information
+
+- CPU% is instantaneous, not averaged
+- Memory shown is working set (RSS), not total virtual memory
+- Process names may not be unique
+
+## Next Steps
+
+- [Desktop Automation](/guides/desktop-automation) - Interacting with application UIs
+- [File Operations](/guides/file-operations) - Managing files and directories
+- [Troubleshooting](/guides/troubleshooting) - Common issues and solutions

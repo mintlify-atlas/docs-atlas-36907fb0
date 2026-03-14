@@ -1,0 +1,167 @@
+---
+title: Scroll
+description: Scroll at coordinates, on labeled UI elements, or at current mouse position
+---
+
+The Scroll tool performs scrolling operations at specified screen coordinates, on UI elements identified by their label from a Snapshot, or at the current mouse cursor position. It supports both vertical and horizontal scrolling.
+
+## Parameters
+
+<ParamField path="loc" type="array" optional>
+  Coordinates `[x, y]` where to scroll. Must be a list of exactly 2 integers representing screen coordinates. Can be omitted to scroll at the current mouse position.
+</ParamField>
+
+<ParamField path="label" type="integer" optional>
+  UI element label/id from a Snapshot call. The tool will automatically resolve the element's coordinates and scroll there.
+</ParamField>
+
+<ParamField path="type" type="string" default="vertical">
+  Direction type of scrolling:
+  - `vertical`: Up/down scrolling
+  - `horizontal`: Left/right scrolling
+</ParamField>
+
+<ParamField path="direction" type="string" default="down">
+  Scroll direction:
+  - For vertical: `up` or `down`
+  - For horizontal: `left` or `right`
+</ParamField>
+
+<ParamField path="wheel_times" type="integer" default="1">
+  Number of wheel scroll increments to perform. One wheel increment typically scrolls 3-5 lines of content. Higher values scroll further.
+</ParamField>
+
+## Response
+
+Returns a confirmation message indicating the scroll operation:
+
+```
+Scrolled vertical down by 3 wheel times at (450,320).
+```
+
+## Usage Examples
+
+### Scroll Down at Coordinates
+
+Scroll down at specific screen coordinates:
+
+```json
+{
+  "loc": [450, 320],
+  "type": "vertical",
+  "direction": "down",
+  "wheel_times": 3
+}
+```
+
+### Scroll by Label
+
+Scroll a UI element using its label from Snapshot:
+
+```json
+{
+  "label": 42,
+  "type": "vertical",
+  "direction": "down",
+  "wheel_times": 5
+}
+```
+
+### Scroll at Current Mouse Position
+
+Scroll wherever the mouse currently is:
+
+```json
+{
+  "type": "vertical",
+  "direction": "up",
+  "wheel_times": 2
+}
+```
+
+### Scroll Up
+
+Scroll upward to view previous content:
+
+```json
+{
+  "loc": [600, 400],
+  "type": "vertical",
+  "direction": "up",
+  "wheel_times": 4
+}
+```
+
+### Horizontal Scroll Right
+
+Scroll horizontally to the right:
+
+```json
+{
+  "label": 18,
+  "type": "horizontal",
+  "direction": "right",
+  "wheel_times": 2
+}
+```
+
+### Horizontal Scroll Left
+
+Scroll horizontally to the left:
+
+```json
+{
+  "loc": [800, 500],
+  "type": "horizontal",
+  "direction": "left",
+  "wheel_times": 3
+}
+```
+
+### Large Scroll Distance
+
+Scroll a significant distance with more wheel increments:
+
+```json
+{
+  "label": 25,
+  "type": "vertical",
+  "direction": "down",
+  "wheel_times": 10
+}
+```
+
+### Precise Short Scroll
+
+Scroll just a small amount for fine-grained navigation:
+
+```json
+{
+  "loc": [500, 300],
+  "type": "vertical",
+  "direction": "down",
+  "wheel_times": 1
+}
+```
+
+<Note>
+  When using the `label` parameter, you must call the Snapshot tool first to populate the desktop state with UI element labels. Snapshot also returns scrollable element information.
+</Note>
+
+<Tip>
+  Omit the `loc` parameter to scroll at the current mouse position. This is useful when you've already positioned the cursor with a Move or Click operation.
+</Tip>
+
+<Tip>
+  One `wheel_times` unit typically scrolls 3-5 lines of text. Adjust based on how much content you need to traverse. Start with smaller values (1-3) for precise scrolling.
+</Tip>
+
+## Best Practices
+
+1. **Use Scrollable Labels**: Snapshot identifies scrollable elements - use their labels for reliable scrolling
+2. **Start Small**: Begin with `wheel_times=1-3` and increase if more scrolling is needed
+3. **Take Snapshots After Scrolling**: Call Snapshot after scrolling to see newly visible content and UI elements
+4. **Current Position Scrolling**: Omit `loc` when you want to scroll at the current mouse position
+5. **Horizontal Scrolling**: Use `type="horizontal"` for wide tables, spreadsheets, or horizontally scrollable content
+6. **Scroll Direction**: Always specify appropriate `direction` for the `type` (up/down for vertical, left/right for horizontal)
+7. **Long Documents**: For long documents, use higher `wheel_times` values (5-10) to scroll faster

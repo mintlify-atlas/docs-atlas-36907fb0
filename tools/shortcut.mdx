@@ -1,0 +1,189 @@
+---
+title: Shortcut
+description: Execute keyboard shortcuts using key combinations
+---
+
+The Shortcut tool executes keyboard shortcuts by simulating key combinations. It supports all standard Windows keyboard shortcuts including modifier keys (Ctrl, Alt, Shift, Win) and function keys.
+
+## Parameters
+
+<ParamField path="shortcut" type="string" required>
+  Keyboard shortcut to execute. Use `+` to separate keys in a combination. Case-insensitive. Examples: `ctrl+c`, `alt+tab`, `win+r`, `ctrl+shift+esc`.
+</ParamField>
+
+## Response
+
+Returns a confirmation message indicating the shortcut pressed:
+
+```
+Pressed ctrl+c.
+```
+
+## Common Shortcuts
+
+### Clipboard Operations
+
+```json
+{"shortcut": "ctrl+c"}   // Copy
+{"shortcut": "ctrl+v"}   // Paste
+{"shortcut": "ctrl+x"}   // Cut
+```
+
+### Application Switching
+
+```json
+{"shortcut": "alt+tab"}        // Switch between applications
+{"shortcut": "alt+shift+tab"}  // Switch applications in reverse
+{"shortcut": "win+tab"}        // Task view
+```
+
+### System Commands
+
+```json
+{"shortcut": "win+r"}          // Open Run dialog
+{"shortcut": "win"}            // Open Start menu
+{"shortcut": "ctrl+shift+esc"} // Task Manager
+{"shortcut": "win+e"}          // File Explorer
+{"shortcut": "win+d"}          // Show desktop
+{"shortcut": "win+l"}          // Lock computer
+```
+
+### Text Editing
+
+```json
+{"shortcut": "ctrl+a"}     // Select all
+{"shortcut": "ctrl+z"}     // Undo
+{"shortcut": "ctrl+y"}     // Redo
+{"shortcut": "ctrl+f"}     // Find
+{"shortcut": "ctrl+s"}     // Save
+{"shortcut": "ctrl+p"}     // Print
+```
+
+### Window Management
+
+```json
+{"shortcut": "win+left"}   // Snap window to left
+{"shortcut": "win+right"}  // Snap window to right
+{"shortcut": "win+up"}     // Maximize window
+{"shortcut": "win+down"}   // Minimize/restore window
+{"shortcut": "alt+f4"}     // Close window
+```
+
+### Browser Shortcuts
+
+```json
+{"shortcut": "ctrl+t"}         // New tab
+{"shortcut": "ctrl+w"}         // Close tab
+{"shortcut": "ctrl+shift+t"}   // Reopen closed tab
+{"shortcut": "ctrl+tab"}       // Switch to next tab
+{"shortcut": "ctrl+shift+tab"} // Switch to previous tab
+{"shortcut": "ctrl+l"}         // Focus address bar
+{"shortcut": "f5"}             // Refresh page
+{"shortcut": "ctrl+f5"}        // Hard refresh
+```
+
+### Screenshots
+
+```json
+{"shortcut": "win+shift+s"}  // Snipping Tool (screen capture)
+{"shortcut": "printscreen"}  // Screenshot to clipboard
+```
+
+### Function Keys
+
+```json
+{"shortcut": "f1"}   // Help
+{"shortcut": "f2"}   // Rename
+{"shortcut": "f5"}   // Refresh
+{"shortcut": "f11"}  // Fullscreen
+{"shortcut": "f12"}  // Developer tools (browsers)
+```
+
+### Special Key Combinations
+
+```json
+{"shortcut": "ctrl+shift+n"}   // New incognito window (browsers)
+{"shortcut": "ctrl+alt+del"}   // Security screen
+{"shortcut": "win+pause"}      // System properties
+{"shortcut": "ctrl+shift+esc"} // Task Manager
+```
+
+## Usage Examples
+
+### Copy Selected Text
+
+```json
+{
+  "shortcut": "ctrl+c"
+}
+```
+
+### Open Run Dialog and Launch Program
+
+```json
+{
+  "shortcut": "win+r"
+}
+```
+
+### Switch to Another Application
+
+```json
+{
+  "shortcut": "alt+tab"
+}
+```
+
+### Save Current Document
+
+```json
+{
+  "shortcut": "ctrl+s"
+}
+```
+
+### Close Active Window
+
+```json
+{
+  "shortcut": "alt+f4"
+}
+```
+
+### Snap Window to Left Half of Screen
+
+```json
+{
+  "shortcut": "win+left"
+}
+```
+
+### Open Task Manager
+
+```json
+{
+  "shortcut": "ctrl+shift+esc"
+}
+```
+
+<Tip>
+  Shortcuts are case-insensitive. Both `"ctrl+c"` and `"Ctrl+C"` work identically.
+</Tip>
+
+<Tip>
+  Use `+` to separate keys in combinations. The tool automatically handles the timing of pressing and releasing keys in the correct sequence.
+</Tip>
+
+<Note>
+  Some shortcuts may require administrator privileges or may be disabled by group policy on managed systems. The tool will execute the shortcut but cannot guarantee the system will respond.
+</Note>
+
+## Best Practices
+
+1. **Use for Quick Actions**: Shortcuts are faster than clicking through menus for common operations
+2. **Combine with Other Tools**: Use shortcuts to prepare the environment, then use Click/Type for specific interactions
+3. **Wait After Shortcuts**: Some shortcuts trigger dialogs or windows - use Wait tool to ensure UI is ready
+4. **System Commands**: Prefer shortcuts like `win+r` for system commands over PowerShell for simple operations
+5. **Application Switching**: Use `alt+tab` for quick application switching instead of Click on taskbar
+6. **Clipboard Workflow**: Use `ctrl+c` to copy, then Clipboard tool to read the copied content
+7. **Window Management**: Use Win+arrow shortcuts for quick window positioning and snapping

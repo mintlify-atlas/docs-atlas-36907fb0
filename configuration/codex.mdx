@@ -1,0 +1,137 @@
+---
+title: Codex CLI
+description: Configure Windows-MCP for Codex CLI
+---
+
+Codex CLI uses a TOML configuration file to manage MCP servers.
+
+## Prerequisites
+
+- Python 3.13+
+- UV package manager: `pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- Node.js (for npm installation)
+- English as the default Windows language (preferred, otherwise disable the App-Tool)
+
+## Installation
+
+<Steps>
+  <Step title="Install Codex CLI">
+    Install Codex CLI globally using npm:
+
+    ```shell
+    npm install -g @openai/codex
+    ```
+  </Step>
+
+  <Step title="Locate config.toml">
+    Navigate to the Codex configuration directory:
+    ```
+    %USERPROFILE%\.codex
+    ```
+
+    Open `config.toml` in your preferred text editor.
+  </Step>
+
+  <Step title="Add Windows-MCP configuration">
+    Add the `windows-mcp` server configuration to the TOML file.
+  </Step>
+
+  <Step title="Restart Codex CLI">
+    Rerun Codex CLI in your terminal. The MCP server will be available immediately.
+  </Step>
+</Steps>
+
+## Configuration
+
+### Install from PyPI (Recommended)
+
+Add this to your `%USERPROFILE%\.codex\config.toml`:
+
+```toml
+[mcp_servers.windows-mcp]
+command="uvx"
+args=[
+  "windows-mcp"
+]
+```
+
+<Note>
+  Unlike JSON-based configurations, TOML uses a different syntax. Make sure to follow the TOML format exactly as shown.
+</Note>
+
+### Install from Source
+
+<Steps>
+  <Step title="Clone the repository">
+    ```shell
+    git clone https://github.com/CursorTouch/Windows-MCP.git
+    cd Windows-MCP
+    ```
+  </Step>
+
+  <Step title="Update config.toml">
+    Replace the command with `uv` and update args:
+
+    ```toml
+    [mcp_servers.windows-mcp]
+    command="uv"
+    args=[
+      "--directory",
+      "<path to the windows-mcp directory>",
+      "run",
+      "windows-mcp"
+    ]
+    ```
+
+    Replace `<path to the windows-mcp directory>` with the actual path where you cloned the repository.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### First Run Timeout
+
+When you install this MCP server for the first time, it may take a minute or two to install dependencies from `pyproject.toml`. The server may timeout on the first run - just ignore it and restart Codex CLI.
+
+### TOML Syntax Errors
+
+- Ensure all TOML is properly formatted
+- Strings should be in double quotes
+- Arrays use square brackets with comma-separated values
+- Validate your TOML using a TOML validator if you encounter parsing errors
+
+### Path Not Found Errors
+
+- Verify `uv.exe` is installed: `where uv` in a terminal
+- Use absolute paths for the `--directory` argument
+- On Windows, you can use forward slashes (`/`) or escaped backslashes (`\\`) in TOML strings
+
+## Additional Configuration
+
+### Disable Telemetry
+
+To disable telemetry, add an `env` section to the TOML configuration:
+
+```toml
+[mcp_servers.windows-mcp]
+command="uvx"
+args=["windows-mcp"]
+
+[mcp_servers.windows-mcp.env]
+ANONYMIZED_TELEMETRY="false"
+```
+
+### Remote Mode
+
+For cloud-hosted Windows automation via [windowsmcp.io](https://windowsmcp.io):
+
+```toml
+[mcp_servers.windows-mcp]
+command="uvx"
+args=["windows-mcp"]
+
+[mcp_servers.windows-mcp.env]
+MODE="remote"
+SANDBOX_ID="your-sandbox-id"
+API_KEY="your-api-key"
+```

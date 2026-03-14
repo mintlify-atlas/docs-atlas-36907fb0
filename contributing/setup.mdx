@@ -1,0 +1,206 @@
+---
+title: Development Setup
+description: Set up your development environment for contributing to Windows-MCP
+---
+
+## Prerequisites
+
+Before you begin contributing to Windows-MCP, ensure you have the following installed:
+
+- **Windows OS**: Windows 7, 8, 8.1, 10, or 11
+- **Python 3.13+**: [Download Python](https://www.python.org/downloads/)
+- **UV Package Manager**: Install with `pip install uv` or see [UV documentation](https://github.com/astral-sh/uv)
+- **Git**: [Download Git](https://git-scm.com/downloads)
+- **A GitHub account**: [Sign up here](https://github.com/join)
+
+## Initial Setup
+
+### 1. Fork the Repository
+
+Click the "Fork" button on the [Windows-MCP repository](https://github.com/CursorTouch/Windows-MCP) to create your own copy.
+
+### 2. Clone Your Fork
+
+```bash
+git clone https://github.com/YOUR_USERNAME/Windows-MCP.git
+cd Windows-MCP
+```
+
+### 3. Add Upstream Remote
+
+Add the original repository as an upstream remote to keep your fork in sync:
+
+```bash
+git remote add upstream https://github.com/CursorTouch/Windows-MCP.git
+```
+
+### 4. Install Dependencies
+
+Use UV to install all project dependencies:
+
+```bash
+uv sync
+```
+
+This will install all dependencies defined in `pyproject.toml` using the Hatchling build backend.
+
+### 5. Verify Installation
+
+Confirm that everything is working correctly:
+
+```bash
+uv run windows-mcp --help
+```
+
+You should see the MCP server help output.
+
+## Development Commands
+
+Here are the essential commands you'll use during development:
+
+### Run the MCP Server
+
+```bash
+uv run windows-mcp
+```
+
+### Code Formatting
+
+Format your code using Ruff:
+
+```bash
+ruff format .
+```
+
+### Linting
+
+Check for code issues:
+
+```bash
+ruff check .
+```
+
+Auto-fix linting issues where possible:
+
+```bash
+ruff check --fix .
+```
+
+### Running Tests
+
+If tests exist in the `tests/` directory:
+
+```bash
+# Run all tests
+pytest
+
+# Run a specific test file
+pytest tests/test_desktop.py
+
+# Run with coverage
+pytest --cov=src tests/
+```
+
+## Environment Configuration
+
+### Disable Telemetry (Optional)
+
+During development, you may want to disable telemetry:
+
+```bash
+export ANONYMIZED_TELEMETRY=false  # Linux/Mac
+set ANONYMIZED_TELEMETRY=false     # Windows CMD
+$env:ANONYMIZED_TELEMETRY="false"  # PowerShell
+```
+
+### Transport Options
+
+Test different transport modes during development:
+
+```bash
+# stdio (default)
+uvx windows-mcp
+
+# SSE for network access
+uvx windows-mcp --transport sse --host localhost --port 8000
+
+# Streamable HTTP
+uvx windows-mcp --transport streamable-http --host localhost --port 8000
+```
+
+## Testing in Safe Environments
+
+<Warning>
+  Windows-MCP has **full system access** and can perform irreversible operations. Always test in a safe environment.
+</Warning>
+
+### Recommended Testing Environments
+
+1. **Windows Sandbox**: Built into Windows 10/11 Pro and Enterprise
+2. **Virtual Machine**: Use VirtualBox, VMware, or Hyper-V
+3. **Windows VM from windowsmcp.io**: Cloud-hosted testing environment
+
+### Testing Workflows
+
+1. Test manually in your safe environment
+2. Verify existing functionality isn't broken
+3. Add automated tests if applicable
+4. Document any environment-specific behaviors
+
+## Keeping Your Fork Updated
+
+Regularly sync your fork with the upstream repository:
+
+```bash
+# Fetch upstream changes
+git fetch upstream
+
+# Merge into your main branch
+git checkout main
+git merge upstream/main
+
+# Push to your fork
+git push origin main
+```
+
+## Troubleshooting
+
+### UV Installation Issues
+
+If `uv sync` fails, ensure UV is properly installed:
+
+```bash
+pip install --upgrade uv
+```
+
+### Python Version Issues
+
+Verify you're using Python 3.13 or higher:
+
+```bash
+python --version
+```
+
+### Permission Issues
+
+Some Windows automation features require administrator privileges. Run your terminal as administrator if you encounter permission errors.
+
+### Import Errors
+
+If you see import errors, ensure dependencies are installed:
+
+```bash
+uv sync --reinstall
+```
+
+## Next Steps
+
+Once your development environment is set up:
+
+- Review the [Guidelines](/contributing/guidelines) for code style and commit conventions
+- Understand the [Architecture](/contributing/architecture) to navigate the codebase
+- Join our [Discord Community](https://discord.com/invite/Aue9Yj2VzS) for help
+
+<Card title="Need Help?" icon="question" href="/resources/community">
+  Join our Discord server or check out GitHub Discussions for support
+</Card>

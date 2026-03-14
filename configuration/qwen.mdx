@@ -1,0 +1,156 @@
+---
+title: Qwen Code
+description: Configure Windows-MCP for Qwen Code
+---
+
+Qwen Code is a command-line interface that supports MCP servers through a settings.json configuration file.
+
+## Prerequisites
+
+- Python 3.13+
+- UV package manager: `pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- Node.js (for npm installation)
+- English as the default Windows language (preferred, otherwise disable the App-Tool)
+
+## Installation
+
+<Steps>
+  <Step title="Install Qwen Code">
+    Install Qwen Code globally using npm:
+
+    ```shell
+    npm install -g @qwen-code/qwen-code@latest
+    ```
+  </Step>
+
+  <Step title="Locate settings.json">
+    Navigate to the Qwen configuration directory:
+    ```
+    %USERPROFILE%\.qwen
+    ```
+
+    Open `settings.json` in your preferred text editor.
+  </Step>
+
+  <Step title="Add Windows-MCP configuration">
+    Add the `windows-mcp` server configuration to the `mcpServers` section of `settings.json`.
+  </Step>
+
+  <Step title="Restart Qwen Code">
+    Rerun Qwen Code in your terminal. The MCP server will be available immediately.
+  </Step>
+</Steps>
+
+## Configuration
+
+### Install from PyPI (Recommended)
+
+Add this to your `%USERPROFILE%\.qwen\settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "uvx",
+      "args": [
+        "windows-mcp"
+      ]
+    }
+  }
+}
+```
+
+### Install from Source
+
+<Steps>
+  <Step title="Clone the repository">
+    ```shell
+    git clone https://github.com/CursorTouch/Windows-MCP.git
+    cd Windows-MCP
+    ```
+  </Step>
+
+  <Step title="Update settings.json">
+    Replace the command with `uv` and update args:
+
+    ```json
+    {
+      "mcpServers": {
+        "windows-mcp": {
+          "command": "uv",
+          "args": [
+            "--directory",
+            "<path to the windows-mcp directory>",
+            "run",
+            "windows-mcp"
+          ]
+        }
+      }
+    }
+    ```
+
+    Replace `<path to the windows-mcp directory>` with the actual path where you cloned the repository.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### First Run Timeout
+
+When you install this MCP server for the first time, it may take a minute or two to install dependencies from `pyproject.toml`. The server may timeout on the first run - just ignore it and restart Qwen Code.
+
+### JSON Syntax Errors
+
+- Ensure all JSON is properly formatted with matching braces
+- Check that commas separate multiple entries in `mcpServers`
+- Validate your JSON using a JSON validator if you encounter parsing errors
+
+### Path Not Found Errors
+
+- Verify `uv.exe` is installed: `where uv` in a terminal
+- Use absolute paths for the `--directory` argument
+- On Windows, use double backslashes (`\\`) in JSON strings for paths
+
+## Additional Configuration
+
+### Disable Telemetry
+
+To disable telemetry, add an `env` section:
+
+```json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "uvx",
+      "args": [
+        "windows-mcp"
+      ],
+      "env": {
+        "ANONYMIZED_TELEMETRY": "false"
+      }
+    }
+  }
+}
+```
+
+### Remote Mode
+
+For cloud-hosted Windows automation via [windowsmcp.io](https://windowsmcp.io):
+
+```json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "uvx",
+      "args": [
+        "windows-mcp"
+      ],
+      "env": {
+        "MODE": "remote",
+        "SANDBOX_ID": "your-sandbox-id",
+        "API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```

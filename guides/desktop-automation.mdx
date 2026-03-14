@@ -1,0 +1,644 @@
+---
+title: Desktop Automation
+description: Automating Windows desktop interactions using the Snapshot → Click → Type → Wait pattern
+---
+
+## Overview
+
+Windows-MCP enables precise desktop automation through UI element detection and interaction. The core workflow follows a **Snapshot → Click → Type → Wait** pattern that ensures reliable, observable automation.
+
+## Core Workflow Pattern
+
+Every desktop automation task should follow this standard pattern:
+
+1. **Snapshot** - Observe the current desktop state
+2. **Click** - Interact with UI elements
+3. **Type** - Enter text when needed
+4. **Wait** - Allow UI to respond
+5. **Repeat** - Verify and continue
+
+### Example: Opening and Using Notepad
+
+```javascript
+// 1. Take a snapshot to see current state
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: {
+    use_vision: true,
+    use_annotation: true
+  }
+});
+
+// 2. Launch application
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "App",
+  arguments: {
+    mode: "launch",
+    name: "notepad"
+  }
+});
+
+// 3. Wait for app to open
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 2 }
+});
+
+// 4. Take another snapshot to identify text area
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: {
+    use_vision: true,
+    use_annotation: true
+  }
+});
+// Returns interactive elements with labels like:
+// [0] Text Editor - coordinates [500, 300]
+
+// 5. Type into the text area using label
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 0,  // Use label from Snapshot
+    text: "Hello from Windows-MCP!",
+    clear: false
+  }
+});
+```
+
+## Interactive Elements
+
+The `Snapshot` tool returns two types of elements:
+
+### 1. Interactive Elements
+
+Buttons, text fields, links, checkboxes, menus - anything clickable or typeable.
+
+```
+List of Interactive Elements:
+[0] Button "Save" at (720, 450) in window "Notepad"
+[1] Edit "Text Editor" at (500, 300) in window "Notepad"
+[2] Button "Close" at (980, 50) in window "Notepad"
+```
+
+### 2. Scrollable Elements
+
+Areas that support scrolling, listed separately with scroll indices.
+
+```
+List of Scrollable Elements:
+[3] Pane "Document Area" at (500, 400) in window "Notepad"
+```
+
+## Clicking Techniques
+
+### Using Labels (Recommended)
+
+After taking a Snapshot, use element labels instead of coordinates:
+
+```javascript
+// Click using label
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: {
+    label: 0,  // Clicks element [0] from last Snapshot
+    button: "left",
+    clicks: 1
+  }
+});
+```
+
+### Using Coordinates
+
+Direct coordinate clicking when needed:
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: {
+    loc: [720, 450],
+    button: "left",
+    clicks: 1
+  }
+});
+```
+
+### Click Options
+
+- **button**: `"left"` (default), `"right"` (context menu), `"middle"`
+- **clicks**: `0` (hover only), `1` (single click), `2` (double click)
+
+### Right-Click for Context Menus
+
+```javascript
+// Right-click to open context menu
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: {
+    label: 5,
+    button: "right",
+    clicks: 1
+  }
+});
+
+// Wait for menu to appear
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 1 }
+});
+
+// Snapshot to see menu items
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_vision: false }
+});
+```
+
+## Typing Text
+
+### Basic Text Entry
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 1,  // Text field from Snapshot
+    text: "automation@example.com",
+    clear: true  // Clear existing text first
+  }
+});
+```
+
+### Type Options
+
+- **clear**: `true` (replace existing text), `false` (append)
+- **caret_position**: `"start"`, `"end"`, `"idle"` (current position)
+- **press_enter**: `true` (submit after typing), `false` (default)
+
+### Form Filling Example
+
+```javascript
+// Fill username
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 0,
+    text: "john.doe",
+    clear: true
+  }
+});
+
+// Fill password and submit
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 1,
+    text: "SecurePassword123",
+    clear: true,
+    press_enter: true  // Submit form
+  }
+});
+```
+
+## Scrolling
+
+### Vertical Scrolling
+
+```javascript
+// Scroll down at specific location
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scroll",
+  arguments: {
+    label: 3,  // Scrollable element
+    type: "vertical",
+    direction: "down",
+    wheel_times: 5  // Amount to scroll
+  }
+});
+```
+
+### Horizontal Scrolling
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scroll",
+  arguments: {
+    loc: [800, 600],
+    type: "horizontal",
+    direction: "right",
+    wheel_times: 3
+  }
+});
+```
+
+### Scrolling Without Location
+
+```javascript
+// Scroll at current mouse position
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scroll",
+  arguments: {
+    type: "vertical",
+    direction: "up",
+    wheel_times: 2
+  }
+});
+```
+
+## Window Management
+
+### Switching Between Applications
+
+```javascript
+// Switch to specific window
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "App",
+  arguments: {
+    mode: "switch",
+    name: "Chrome"  // Fuzzy match
+  }
+});
+```
+
+### Resizing Windows
+
+```javascript
+// Resize active window
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "App",
+  arguments: {
+    mode: "resize",
+    window_size: [1200, 800],  // width, height
+    window_loc: [100, 100]     // x, y position
+  }
+});
+
+// Resize specific window by name
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "App",
+  arguments: {
+    mode: "resize",
+    name: "Notepad",
+    window_size: [800, 600]
+  }
+});
+```
+
+## Keyboard Shortcuts
+
+```javascript
+// Copy selected text
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "ctrl+c" }
+});
+
+// Paste
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "ctrl+v" }
+});
+
+// Switch applications
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "alt+tab" }
+});
+
+// Open Task Manager
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "ctrl+shift+esc" }
+});
+```
+
+## Drag and Drop
+
+```javascript
+// 1. Move to source element
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Move",
+  arguments: {
+    label: 5,  // File to drag
+    drag: false
+  }
+});
+
+// 2. Drag to destination
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Move",
+  arguments: {
+    loc: [800, 400],  // Drop location
+    drag: true  // Perform drag from current position
+  }
+});
+```
+
+## Multi-Element Operations
+
+### Multi-Select (with Ctrl)
+
+```javascript
+// Select multiple files
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "MultiSelect",
+  arguments: {
+    labels: [3, 5, 7],  // Multiple elements from Snapshot
+    press_ctrl: true  // Hold Ctrl while clicking
+  }
+});
+```
+
+### Multi-Edit (Fill Multiple Fields)
+
+```javascript
+// Fill multiple form fields at once
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "MultiEdit",
+  arguments: {
+    labels: [
+      [0, "John Doe"],        // [label, text]
+      [1, "john@example.com"],
+      [2, "555-1234"]
+    ]
+  }
+});
+```
+
+## Wait Strategy
+
+### When to Wait
+
+1. **After launching apps**: Wait 2-3 seconds
+2. **After clicking buttons**: Wait 0.5-1 seconds
+3. **After opening menus**: Wait 0.5 seconds
+4. **For page loads**: Wait 3-5 seconds
+5. **For animations**: Wait 1-2 seconds
+
+### Verify After Wait
+
+Always take a Snapshot after waiting to verify the UI is ready:
+
+```javascript
+// Click button
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 2, button: "left", clicks: 1 }
+});
+
+// Wait for dialog
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 2 }
+});
+
+// Verify dialog appeared
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_vision: false }
+});
+```
+
+## Best Practices
+
+### 1. Always Start with Snapshot
+
+```javascript
+// GOOD: Observe before acting
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_vision: true }
+});
+
+// BAD: Clicking blindly
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { loc: [500, 300] }  // Don't know what's there!
+});
+```
+
+### 2. Use Labels Over Coordinates
+
+```javascript
+// GOOD: Resilient to window position changes
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 0 }
+});
+
+// RISKY: Breaks if window moves
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { loc: [720, 450] }
+});
+```
+
+### 3. Verify After Every Action
+
+Use the Snapshot → Action → Wait → Snapshot pattern:
+
+```javascript
+// 1. Observe
+const before = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: {}
+});
+
+// 2. Act
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 0 }
+});
+
+// 3. Wait
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 1 }
+});
+
+// 4. Verify
+const after = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: {}
+});
+```
+
+### 4. Use Vision Sparingly
+
+Enable `use_vision` only when you need to see the screen visually:
+
+```javascript
+// For debugging or visual verification
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: {
+    use_vision: true,
+    use_annotation: true  // Shows labeled bounding boxes
+  }
+});
+
+// For normal automation (faster, uses less tokens)
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: {
+    use_vision: false  // Text-based UI tree only
+  }
+});
+```
+
+### 5. Handle Minimized Windows
+
+Switch to a window to restore it if minimized:
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "App",
+  arguments: {
+    mode: "switch",
+    name: "Calculator"  // Automatically restores if minimized
+  }
+});
+```
+
+## Complete Example: File Search and Open
+
+```javascript
+// 1. Take snapshot to see desktop
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_vision: true }
+});
+
+// 2. Open File Explorer with Win+E
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "win+e" }
+});
+
+// 3. Wait for Explorer to open
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 2 }
+});
+
+// 4. See Explorer window
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_vision: true, use_annotation: true }
+});
+// Returns: [0] Edit "Search box" at (800, 100)
+
+// 5. Click search box
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 0, button: "left", clicks: 1 }
+});
+
+// 6. Type search query
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 0,
+    text: "report.docx",
+    press_enter: true
+  }
+});
+
+// 7. Wait for search results
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 3 }
+});
+
+// 8. View search results
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_vision: true, use_annotation: true }
+});
+// Returns: [5] ListItem "report.docx" at (600, 400)
+
+// 9. Double-click to open file
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 5, button: "left", clicks: 2 }
+});
+```
+
+## Troubleshooting
+
+### Element Not Found
+
+If a label doesn't exist, you'll get an error:
+```
+Failed to find element with label 10: Label 10 out of range
+```
+
+**Solution**: Take a fresh Snapshot to get current element labels.
+
+### Wrong Element Clicked
+
+If the UI changed between Snapshot and Click:
+
+**Solution**: Always Snapshot immediately before interacting with elements.
+
+### UI Not Ready
+
+If an action fails because the UI hasn't loaded:
+
+**Solution**: Increase wait duration, then Snapshot to verify.
+
+## Next Steps
+
+- [Browser Automation](/guides/browser-automation) - Special techniques for web browsers
+- [File Operations](/guides/file-operations) - Working with files and directories
+- [Process Management](/guides/process-management) - Managing running applications

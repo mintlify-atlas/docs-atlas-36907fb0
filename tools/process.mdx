@@ -1,0 +1,182 @@
+---
+title: Process
+description: List and manage running Windows processes
+---
+
+The Process tool provides two modes for managing Windows processes: listing running processes with filtering and sorting options, and terminating processes by PID or name.
+
+## Parameters
+
+<ParamField path="mode" type="string" required>
+  Operation mode. One of:
+  - `list`: List running processes with filtering and sorting
+  - `kill`: Terminate a process by PID or name
+</ParamField>
+
+<ParamField path="name" type="string">
+  Process name to filter or kill.
+  - For `list` mode: Filter processes by name (partial match)
+  - For `kill` mode: Name of the process to terminate (required if pid not provided)
+</ParamField>
+
+<ParamField path="pid" type="integer">
+  Process ID (PID) to kill. Required for `kill` mode if name is not provided.
+</ParamField>
+
+<ParamField path="sort_by" type="string" default="memory">
+  Sort criterion for `list` mode. One of:
+  - `memory`: Sort by memory usage (highest first)
+  - `cpu`: Sort by CPU usage (highest first)
+  - `name`: Sort alphabetically by process name
+  
+  Default: `memory`
+</ParamField>
+
+<ParamField path="limit" type="integer" default="20">
+  Maximum number of processes to return in `list` mode. Default is 20.
+</ParamField>
+
+<ParamField path="force" type="boolean" default="false">
+  For `kill` mode: force termination of the process without graceful shutdown.
+</ParamField>
+
+## Mode Details
+
+### List Mode
+
+List running processes with optional filtering and sorting.
+
+```python
+# List top 20 processes by memory usage
+process_tool(mode="list")
+
+# List top 10 processes by CPU usage
+process_tool(mode="list", sort_by="cpu", limit=10)
+
+# List all processes sorted by name
+process_tool(mode="list", sort_by="name", limit=100)
+
+# Filter processes by name
+process_tool(mode="list", name="chrome")
+```
+
+The output typically includes:
+- Process name
+- Process ID (PID)
+- CPU usage percentage
+- Memory usage (MB or GB)
+- Status information
+
+### Kill Mode
+
+Terminate a process by PID or name.
+
+```python
+# Kill process by PID
+process_tool(mode="kill", pid=1234)
+
+# Kill process by name
+process_tool(mode="kill", name="notepad.exe")
+
+# Force kill a process
+process_tool(mode="kill", name="unresponsive_app.exe", force=True)
+
+# Kill by PID with force
+process_tool(mode="kill", pid=5678, force=True)
+```
+
+<Warning>
+Killing a process will terminate it immediately. Use `force=True` only when necessary, as it prevents the application from saving data or performing cleanup operations.
+</Warning>
+
+## Usage Examples
+
+### Finding Resource-Heavy Processes
+
+```python
+# Find processes using most memory
+result = process_tool(mode="list", sort_by="memory", limit=10)
+
+# Find processes using most CPU
+result = process_tool(mode="list", sort_by="cpu", limit=10)
+```
+
+### Searching for Specific Applications
+
+```python
+# Find all Chrome processes
+result = process_tool(mode="list", name="chrome")
+
+# Find all Python processes
+result = process_tool(mode="list", name="python")
+```
+
+### Managing Unresponsive Applications
+
+```python
+# List processes to find the unresponsive one
+process_tool(mode="list", name="my_app")
+
+# Kill the unresponsive process by PID
+process_tool(mode="kill", pid=12345, force=True)
+```
+
+### Task Manager Workflow
+
+```python
+# Step 1: List all processes
+all_processes = process_tool(mode="list", limit=50)
+
+# Step 2: Identify high-memory process
+chrome_processes = process_tool(mode="list", name="chrome")
+
+# Step 3: Terminate specific process
+process_tool(mode="kill", pid=8765)
+```
+
+### Monitoring System Resources
+
+```python
+# Check top CPU consumers
+cpu_hogs = process_tool(mode="list", sort_by="cpu", limit=5)
+
+# Check top memory consumers
+memory_hogs = process_tool(mode="list", sort_by="memory", limit=5)
+
+# Get complete process list
+all_sorted = process_tool(mode="list", sort_by="name", limit=200)
+```
+
+## Error Handling
+
+The tool returns descriptive error messages:
+
+```python
+# Invalid mode
+'Error: mode must be either "list" or "kill".'
+
+# General errors
+"Error managing processes: <error details>"
+```
+
+## Security Considerations
+
+<Warning>
+The Process tool can terminate any process that the current user has permissions to kill, including:
+- System processes (may cause instability)
+- Other users' processes (if running as Administrator)
+- Critical Windows services
+
+Use with caution, especially when running with elevated privileges.
+</Warning>
+
+## Keywords
+
+task manager, running tasks, kill, terminate, stop process, PID, CPU, memory usage
+
+## Tool Annotations
+
+- **Read-only**: No (list mode is read-only, kill mode is destructive)
+- **Destructive**: Yes
+- **Idempotent**: No
+- **Open-world**: No

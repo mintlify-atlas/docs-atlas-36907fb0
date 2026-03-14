@@ -1,0 +1,228 @@
+---
+title: MultiSelect
+description: Select multiple items or perform multiple clicks
+---
+
+The MultiSelect tool enables selecting multiple UI elements simultaneously, such as files, folders, or checkboxes. It can either perform a multi-selection (with Ctrl held) or execute multiple sequential clicks.
+
+## Parameters
+
+<ParamField path="locs" type="array">
+  Array of coordinate pairs `[[x1, y1], [x2, y2], ...]` to click.
+  
+  Each coordinate pair represents a location to click. Provide either `locs` or `labels`.
+</ParamField>
+
+<ParamField path="labels" type="array">
+  Array of UI element labels/IDs `[label1, label2, ...]` from a Snapshot.
+  
+  Element labels are obtained from the Snapshot tool. Provide either `locs` or `labels`.
+</ParamField>
+
+<ParamField path="press_ctrl" type="boolean" default="true">
+  Whether to hold Ctrl during clicks for multi-selection.
+  - `true`: Holds Ctrl key, enabling multi-selection (default)
+  - `false`: Performs sequential clicks without Ctrl
+  
+  Default: `true`
+</ParamField>
+
+## How It Works
+
+### Multi-Selection Mode (press_ctrl=True)
+
+When `press_ctrl=True` (default), the tool holds down the Ctrl key while clicking each location. This is useful for:
+- Selecting multiple files in File Explorer
+- Selecting multiple items in a list
+- Checking multiple checkboxes
+- Selecting multiple objects in applications
+
+### Sequential Click Mode (press_ctrl=False)
+
+When `press_ctrl=False`, the tool performs individual clicks at each location without holding any modifier keys. This is useful for:
+- Clicking multiple buttons in sequence
+- Interacting with multiple separate UI elements
+- Performing a series of independent actions
+
+## Usage Examples
+
+### Selecting Multiple Files by Coordinates
+
+```python
+# Select three files in File Explorer using coordinates
+multi_select_tool(
+    locs=[[150, 200], [150, 250], [150, 300]],
+    press_ctrl=True
+)
+```
+
+### Selecting Multiple Files by Labels
+
+```python
+# First, take a snapshot to get element labels
+snapshot_result = state_tool(use_ui_tree=True)
+
+# Then select files using their labels
+multi_select_tool(
+    labels=[42, 43, 44],  # Label IDs from Snapshot
+    press_ctrl=True
+)
+```
+
+### Checking Multiple Checkboxes
+
+```python
+# Check multiple checkboxes in a form
+multi_select_tool(
+    locs=[[300, 150], [300, 200], [300, 250]],
+    press_ctrl=True
+)
+```
+
+### Sequential Button Clicks
+
+```python
+# Click multiple buttons without multi-selection
+multi_select_tool(
+    locs=[[500, 300], [600, 300], [700, 300]],
+    press_ctrl=False
+)
+```
+
+### Combining Coordinates and Labels
+
+```python
+# You can provide coordinates
+multi_select_tool(
+    locs=[[100, 150], [200, 150], [300, 150]]
+)
+
+# Or labels from Snapshot (not both at once)
+multi_select_tool(
+    labels=[10, 11, 12]
+)
+```
+
+### Selecting Items in a Grid Layout
+
+```python
+# Select multiple items in a grid (e.g., photo gallery)
+grid_locations = [
+    [200, 150], [400, 150], [600, 150],  # First row
+    [200, 350], [400, 350], [600, 350],  # Second row
+]
+
+multi_select_tool(
+    locs=grid_locations,
+    press_ctrl=True
+)
+```
+
+### Selecting Multiple List Items
+
+```python
+# Take snapshot to get list item labels
+snapshot = state_tool(use_ui_tree=True)
+
+# Select specific items from the list
+multi_select_tool(
+    labels=[25, 28, 31, 34],  # Non-consecutive items
+    press_ctrl=True
+)
+```
+
+## Return Value
+
+Returns a success message listing all clicked locations:
+
+```
+Multi-selected elements at:
+(150,200)
+(150,250)
+(150,300)
+```
+
+## Working with Snapshot
+
+To use the `labels` parameter, you must first call the Snapshot tool to get UI element labels:
+
+```python
+# Step 1: Take snapshot
+snapshot_result = state_tool(use_ui_tree=True)
+
+# Step 2: Identify element labels from the snapshot output
+# The snapshot shows interactive elements with their labels
+
+# Step 3: Use labels in MultiSelect
+multi_select_tool(
+    labels=[12, 15, 18],  # Labels from snapshot
+    press_ctrl=True
+)
+```
+
+## Error Handling
+
+```python
+# Neither locs nor labels provided
+"ValueError: Either locs or labels must be provided."
+
+# Desktop state not available when using labels
+"ValueError: Desktop state is empty. Please call Snapshot first."
+
+# Invalid label
+"ValueError: Failed to find element with label 99: <error details>"
+```
+
+## Best Practices
+
+<Info>
+**Tips for effective multi-selection:**
+
+1. **Use Snapshot for accuracy**: When possible, use `labels` instead of `locs` for more reliable element targeting
+2. **Verify UI state**: Always call Snapshot before using labels to ensure the UI tree is current
+3. **Coordinate spacing**: When using coordinates, ensure adequate spacing between click locations to avoid mis-clicks
+4. **Test first**: For critical operations, test with a single click before multi-selecting
+5. **Ctrl vs. No Ctrl**: Use `press_ctrl=True` for selections, `press_ctrl=False` for sequential actions
+</Info>
+
+## Common Use Cases
+
+### File Management
+```python
+# Select multiple files for batch operations
+multi_select_tool(
+    locs=[[150, 200], [150, 240], [150, 280], [150, 320]],
+    press_ctrl=True
+)
+# Then perform action (e.g., delete, copy, move)
+```
+
+### Form Filling
+```python
+# Check multiple options in a form
+multi_select_tool(
+    labels=[32, 35, 38],  # Checkbox labels
+    press_ctrl=True
+)
+```
+
+### Batch Operations
+```python
+# Select all items in a specific category
+category_items = [[200, 150], [200, 200], [200, 250], [200, 300]]
+multi_select_tool(
+    locs=category_items,
+    press_ctrl=True
+)
+```
+
+## Keywords
+
+multi-select, multiple selection, bulk select, files, folders, checkboxes, Ctrl+click
+
+## Tool Annotations
+
+- **Read-only**: No
+- **Destructive**: Yes
+- **Idempotent**: No
+- **Open-world**: No

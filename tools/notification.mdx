@@ -1,0 +1,178 @@
+---
+title: Notification
+description: Send Windows toast notifications to alert the user
+---
+
+The Notification tool sends native Windows toast notifications, useful for alerting users about important events, task completion, or status updates when operating the desktop remotely.
+
+## Parameters
+
+<ParamField path="title" type="string" required>
+  The notification title. Displayed prominently at the top of the toast notification.
+  
+  Keep concise (typically 1-5 words) for best readability.
+</ParamField>
+
+<ParamField path="message" type="string" required>
+  The notification message body. Contains the detailed information you want to communicate.
+  
+  Can be longer than the title but should remain brief for better user experience.
+</ParamField>
+
+## Return Value
+
+Returns a string confirming the notification was sent, or an error message if the operation failed.
+
+## Usage Examples
+
+### Simple Task Completion Alert
+
+```python
+# Notify user when a task completes
+notification_tool(
+    title="Task Complete",
+    message="Your report has been generated successfully."
+)
+```
+
+### Status Update Notification
+
+```python
+# Alert user about system status
+notification_tool(
+    title="Backup Complete",
+    message="All files have been backed up to the cloud."
+)
+```
+
+### Error or Warning Alert
+
+```python
+# Notify user of an issue
+notification_tool(
+    title="Action Required",
+    message="Please review the document before proceeding."
+)
+```
+
+### Progress Notification
+
+```python
+# Inform user about long-running process
+notification_tool(
+    title="Download Complete",
+    message="The installer has been downloaded. Ready to install."
+)
+```
+
+## Best Practices
+
+<Tip>
+  Use notifications for important events that require user attention, especially when automating tasks that run in the background or when you're controlling a remote desktop.
+</Tip>
+
+<Note>
+  Windows toast notifications appear in the Action Center and disappear automatically after a few seconds unless the user interacts with them.
+</Note>
+
+<Warning>
+  Avoid sending too many notifications in quick succession, as this can be disruptive to the user and may cause notification fatigue.
+</Warning>
+
+## Common Use Cases
+
+1. **Remote Desktop Automation**: Alert the user when automated tasks complete on a remote machine
+2. **Long-Running Tasks**: Notify when processes like downloads, backups, or data processing finish
+3. **User Interaction Required**: Alert when automation encounters a situation requiring human decision
+4. **Status Updates**: Provide progress updates for multi-step workflows
+5. **Error Handling**: Inform users when automated processes encounter errors
+
+## When to Use Notifications
+
+### Good Use Cases
+
+- **Task completion**: "File conversion complete"
+- **User input needed**: "Please approve the next step"
+- **Important events**: "Security scan detected issues"
+- **Background process updates**: "Database backup finished"
+
+### Avoid Notifications For
+
+- **Routine operations**: Don't notify for every small step in a workflow
+- **Expected behavior**: Avoid notifying about normal, anticipated actions
+- **High-frequency events**: Don't spam users with continuous notifications
+
+## Technical Details
+
+- Sends native Windows 10/11 toast notifications via the Desktop service
+- Notifications appear in the Windows Action Center
+- Toast notifications auto-dismiss after a system-defined timeout (typically 5-7 seconds)
+- Notifications are non-blocking and don't interrupt user workflows
+
+## Notification Behavior
+
+- **Display**: Toast appears in the bottom-right corner of the screen
+- **Sound**: Plays default Windows notification sound (system-dependent)
+- **Action Center**: Notifications are logged in the Windows Action Center for later review
+- **Focus Assist**: Respects Windows Focus Assist settings (may be suppressed during certain modes)
+
+## Example Workflows
+
+### Multi-Step Task with Progress Updates
+
+```python
+# Start a complex workflow
+notification_tool(
+    title="Processing Started",
+    message="Beginning data analysis workflow..."
+)
+
+# ... perform various steps ...
+
+# Notify at key milestones
+notification_tool(
+    title="Halfway Complete",
+    message="Data extraction finished. Starting analysis..."
+)
+
+# ... more steps ...
+
+# Final notification
+notification_tool(
+    title="All Done",
+    message="Analysis complete. Results saved to Desktop."
+)
+```
+
+### Error Handling with Notifications
+
+```python
+try:
+    # Attempt some operation
+    result = risky_operation()
+    
+    notification_tool(
+        title="Success",
+        message="Operation completed without errors."
+    )
+except Exception as e:
+    notification_tool(
+        title="Error Occurred",
+        message=f"Operation failed: {str(e)}"
+    )
+```
+
+### Remote Automation Alerts
+
+```python
+# When controlling a remote desktop
+notification_tool(
+    title="Remote Task Update",
+    message="AI agent has completed the requested file organization."
+)
+```
+
+## Related Tools
+
+- [Wait](/tools/wait) - Pause execution before or after sending notifications
+- [Shell](/tools/shell) - Execute advanced notification scripts with custom actions

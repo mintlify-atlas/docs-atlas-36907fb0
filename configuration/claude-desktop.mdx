@@ -1,0 +1,216 @@
+---
+title: Claude Desktop
+description: Configure Windows-MCP for Claude Desktop
+---
+
+Claude Desktop is one of the most popular MCP clients. This guide covers both standard and MSIX (Windows Store) installations.
+
+## Prerequisites
+
+- Python 3.13+
+- UV package manager: `pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- [Claude Desktop](https://claude.ai/download)
+- English as the default Windows language (preferred, otherwise disable the App-Tool)
+
+## Installation
+
+<Steps>
+  <Step title="Install Claude Desktop">
+    Download and install [Claude Desktop](https://claude.ai/download) from the official website.
+  </Step>
+
+  <Step title="Choose installation method">
+    You can install Windows-MCP from PyPI (recommended) or from source.
+  </Step>
+
+  <Step title="Configure claude_desktop_config.json">
+    Add the Windows-MCP configuration to your Claude Desktop config file.
+  </Step>
+
+  <Step title="Restart Claude Desktop">
+    Open Claude Desktop and the MCP server will start automatically.
+  </Step>
+</Steps>
+
+## Configuration Options
+
+### Option A: Install from PyPI (Recommended)
+
+Use `uvx` to run the latest version directly from PyPI.
+
+Add this to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "uvx",
+      "args": [
+        "windows-mcp"
+      ]
+    }
+  }
+}
+```
+
+### Option B: Install from Source
+
+<Steps>
+  <Step title="Clone the repository">
+    ```shell
+    git clone https://github.com/CursorTouch/Windows-MCP.git
+    cd Windows-MCP
+    ```
+  </Step>
+
+  <Step title="Configure with path">
+    Add this to your `claude_desktop_config.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "windows-mcp": {
+          "command": "uv",
+          "args": [
+            "--directory",
+            "<path to the windows-mcp directory>",
+            "run",
+            "windows-mcp"
+          ]
+        }
+      }
+    }
+    ```
+
+    Replace `<path to the windows-mcp directory>` with the actual path where you cloned the repository.
+  </Step>
+</Steps>
+
+## MSIX (Windows Store) Installation
+
+<Warning>
+  The MSIX-packaged Claude Desktop virtualizes `%APPDATA%`. The "Edit Config" button may open the wrong file location.
+</Warning>
+
+The MSIX version of Claude Desktop has special path requirements:
+
+### Config File Location
+
+The config file is located at:
+```
+%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json
+```
+
+**Not** at the standard `%APPDATA%\Claude\` location.
+
+### Full Path Configuration
+
+Electron apps don't inherit PATH, so `uv`/`uvx` can fail with `spawn ENOENT`. You must use the **full absolute path** to `uv.exe`:
+
+```json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "C:\\Users\\<user>\\.local\\bin\\uv.exe",
+      "args": [
+        "--directory",
+        "C:\\Users\\<user>\\AppData\\Local\\Packages\\Claude_pzs8sxrjxfjjc\\LocalCache\\Roaming\\Claude\\Claude Extensions\\ant.dir.cursortouch.windows-mcp",
+        "run",
+        "windows-mcp"
+      ]
+    }
+  }
+}
+```
+
+**For PyPI install with MSIX:**
+```json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "C:\\Users\\<user>\\.local\\bin\\uv.exe",
+      "args": [
+        "run",
+        "windows-mcp"
+      ]
+    }
+  }
+}
+```
+
+Replace `<user>` with your Windows username.
+
+### Finding uv.exe
+
+To locate `uv.exe`, run in a terminal:
+```shell
+where uv
+```
+
+Common location: `%USERPROFILE%\.local\bin\uv.exe`
+
+### File Encoding
+
+<Warning>
+  Save the config file as **UTF-8 without BOM**. PowerShell's `Set-Content -Encoding UTF8` adds a BOM that breaks the JSON parser.
+</Warning>
+
+## Troubleshooting
+
+### First Run Timeout
+
+When you install this MCP server for the first time, it may take a minute or two to install dependencies from `pyproject.toml`. The server may timeout on the first run - just ignore it and restart Claude Desktop.
+
+### Integration Issues
+
+For additional Claude Desktop integration troubleshooting, see the [MCP documentation](https://modelcontextprotocol.io/quickstart/server#claude-for-desktop-integration-issues).
+
+### Path Not Found Errors
+
+- Verify `uv.exe` is installed: `where uv`
+- Use absolute paths with double backslashes in JSON
+- Check that the Windows-MCP directory path is correct
+
+## Additional Configuration
+
+### Disable Telemetry
+
+To disable telemetry, add an `env` section:
+
+```json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "uvx",
+      "args": [
+        "windows-mcp"
+      ],
+      "env": {
+        "ANONYMIZED_TELEMETRY": "false"
+      }
+    }
+  }
+}
+```
+
+### Remote Mode
+
+For cloud-hosted Windows automation via [windowsmcp.io](https://windowsmcp.io):
+
+```json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "uvx",
+      "args": [
+        "windows-mcp"
+      ],
+      "env": {
+        "MODE": "remote",
+        "SANDBOX_ID": "your-sandbox-id",
+        "API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```

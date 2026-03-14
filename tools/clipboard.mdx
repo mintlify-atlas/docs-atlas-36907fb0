@@ -1,0 +1,142 @@
+---
+title: Clipboard
+description: Read and write clipboard content for copy/paste operations
+---
+
+The Clipboard tool provides programmatic access to the Windows clipboard, allowing you to read current clipboard content or set new text.
+
+## Parameters
+
+<ParamField path="mode" type="string" required>
+  The clipboard operation to perform.
+  
+  **Options:**
+  - `"get"` - Read the current clipboard content
+  - `"set"` - Write new text to the clipboard
+</ParamField>
+
+<ParamField path="text" type="string">
+  The text to set in the clipboard. **Required when `mode="set"`**, ignored for `mode="get"`.
+</ParamField>
+
+## Return Value
+
+Returns a string describing the operation result:
+
+- **For `mode="get"`**: Returns the clipboard content prefixed with `"Clipboard content:\n"`, or a message if the clipboard is empty or contains non-text data
+- **For `mode="set"`**: Returns confirmation showing the text that was set (truncated to 100 characters if longer)
+
+## Usage Examples
+
+### Reading Clipboard Content
+
+```python
+# Get current clipboard text
+result = clipboard_tool(mode="get")
+# Returns: "Clipboard content:\nHello, World!"
+```
+
+### Setting Clipboard Content
+
+```python
+# Copy text to clipboard
+result = clipboard_tool(
+    mode="set",
+    text="This text is now in the clipboard"
+)
+# Returns: "Clipboard set to: This text is now in the clipboard"
+```
+
+### Copy-Paste Workflow
+
+```python
+# 1. Copy some text to clipboard
+clipboard_tool(
+    mode="set",
+    text="Important data to transfer"
+)
+
+# 2. Paste using keyboard shortcut
+shortcut_tool(shortcut="ctrl+v")
+
+# 3. Later, read what's on the clipboard
+content = clipboard_tool(mode="get")
+```
+
+### Data Transfer Between Applications
+
+```python
+# Copy data from one location
+clipboard_tool(
+    mode="set",
+    text="user@example.com"
+)
+
+# Click on an email field
+click_tool(loc=[500, 300])
+
+# Paste the email address
+shortcut_tool(shortcut="ctrl+v")
+```
+
+## Best Practices
+
+<Tip>
+  Use the Clipboard tool for transferring text between applications, especially when the Type tool may not work reliably (e.g., in certain legacy applications or special input fields).
+</Tip>
+
+<Note>
+  The Clipboard tool only supports text data. If the clipboard contains images, files, or other binary data, `mode="get"` will return a message indicating non-text content.
+</Note>
+
+<Warning>
+  Setting the clipboard will **overwrite** any existing content. The previous clipboard data cannot be recovered after calling `mode="set"`.
+</Warning>
+
+## Common Use Cases
+
+1. **Form Filling**: Copy pre-formatted data and paste into multiple fields
+2. **Data Extraction**: Copy text from applications that don't allow direct text access
+3. **Text Transfer**: Move content between applications that support clipboard operations
+4. **Verification**: Check what was copied before pasting elsewhere
+
+## Technical Details
+
+- Uses the Windows `win32clipboard` API for reliable clipboard access
+- Supports Unicode text (CF_UNICODETEXT format)
+- Thread-safe clipboard operations with proper open/close handling
+- Automatically empties clipboard before setting new content
+
+## Alternative Approaches
+
+### Using Keyboard Shortcuts
+
+You can combine Clipboard with keyboard shortcuts for a complete copy-paste workflow:
+
+```python
+# Select all text in current field
+shortcut_tool(shortcut="ctrl+a")
+
+# Copy to clipboard
+shortcut_tool(shortcut="ctrl+c")
+
+# Read what was copied
+content = clipboard_tool(mode="get")
+
+# Paste in another location
+click_tool(loc=[600, 400])
+shortcut_tool(shortcut="ctrl+v")
+```
+
+### Advantages Over Type Tool
+
+- **Faster** for large text blocks
+- **More reliable** for special characters and formatting
+- **Works** in applications with restricted input methods
+- **Preserves** exact text including special characters
+
+## Related Tools
+
+- [Type](/tools/type) - Enter text directly at specific coordinates
+- [Shortcut](/tools/shortcut) - Execute keyboard shortcuts including Ctrl+C and Ctrl+V
+- [MultiEdit](/tools/multiedit) - Type into multiple fields simultaneously

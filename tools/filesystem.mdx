@@ -1,0 +1,301 @@
+---
+title: FileSystem
+description: Manage file system operations with eight different modes
+---
+
+The FileSystem tool provides comprehensive file and directory management with eight different operation modes. Relative paths are automatically resolved from the user's Desktop folder, while absolute paths can access any location.
+
+## Parameters
+
+<ParamField path="mode" type="string" required>
+  Operation mode. One of:
+  - `read`: Read text file contents with optional line offset/limit
+  - `write`: Create or overwrite a file (set append=True to append)
+  - `copy`: Copy file or directory to destination
+  - `move`: Move or rename file/directory
+  - `delete`: Delete file or directory (set recursive=True for non-empty dirs)
+  - `list`: List directory contents with optional pattern filter
+  - `search`: Find files matching a glob pattern
+  - `info`: Get file/directory metadata (size, dates, type)
+</ParamField>
+
+<ParamField path="path" type="string" required>
+  Path to the file or directory. Relative paths are resolved from the user's Desktop folder. Use absolute paths to access other locations.
+</ParamField>
+
+<ParamField path="destination" type="string">
+  Destination path for copy/move operations. Required for `copy` and `move` modes.
+</ParamField>
+
+<ParamField path="content" type="string">
+  Text content to write to the file. Required for `write` mode.
+</ParamField>
+
+<ParamField path="pattern" type="string">
+  Glob pattern for filtering or searching. Required for `search` mode, optional for `list` mode.
+  
+  Examples: `*.txt`, `**/*.py`, `file?.log`
+</ParamField>
+
+<ParamField path="recursive" type="boolean" default="false">
+  Enable recursive operations:
+  - For `delete`: Allow deletion of non-empty directories
+  - For `list`/`search`: Search subdirectories recursively
+</ParamField>
+
+<ParamField path="append" type="boolean" default="false">
+  For `write` mode: append content to file instead of overwriting.
+</ParamField>
+
+<ParamField path="overwrite" type="boolean" default="false">
+  For `copy`/`move` modes: overwrite destination if it exists.
+</ParamField>
+
+<ParamField path="offset" type="integer">
+  For `read` mode: line number to start reading from (0-based).
+</ParamField>
+
+<ParamField path="limit" type="integer">
+  For `read` mode: maximum number of lines to read.
+</ParamField>
+
+<ParamField path="encoding" type="string" default="utf-8">
+  Text encoding for read/write operations. Default is `utf-8`.
+</ParamField>
+
+<ParamField path="show_hidden" type="boolean" default="false">
+  For `list` mode: include hidden files and directories in the output.
+</ParamField>
+
+## Mode Details
+
+### Read Mode
+
+Read text file contents with optional line-based pagination.
+
+```python
+# Read entire file
+file_system_tool(mode="read", path="notes.txt")
+
+# Read first 100 lines
+file_system_tool(mode="read", path="log.txt", limit=100)
+
+# Read lines 50-150
+file_system_tool(mode="read", path="data.csv", offset=50, limit=100)
+
+# Read with specific encoding
+file_system_tool(mode="read", path="utf16.txt", encoding="utf-16")
+```
+
+### Write Mode
+
+Create or overwrite files with text content.
+
+```python
+# Create new file
+file_system_tool(
+    mode="write",
+    path="notes.txt",
+    content="Hello, World!"
+)
+
+# Append to existing file
+file_system_tool(
+    mode="write",
+    path="log.txt",
+    content="New log entry\n",
+    append=True
+)
+
+# Write with specific encoding
+file_system_tool(
+    mode="write",
+    path="data.txt",
+    content="Some content",
+    encoding="utf-16"
+)
+```
+
+### Copy Mode
+
+Copy files or directories to a new location.
+
+```python
+# Copy file to Desktop
+file_system_tool(
+    mode="copy",
+    path="C:\\Documents\\report.pdf",
+    destination="report_backup.pdf"
+)
+
+# Copy directory
+file_system_tool(
+    mode="copy",
+    path="C:\\Projects\\MyApp",
+    destination="C:\\Backup\\MyApp"
+)
+
+# Copy with overwrite
+file_system_tool(
+    mode="copy",
+    path="file.txt",
+    destination="file_copy.txt",
+    overwrite=True
+)
+```
+
+### Move Mode
+
+Move or rename files and directories.
+
+```python
+# Rename file on Desktop
+file_system_tool(
+    mode="move",
+    path="old_name.txt",
+    destination="new_name.txt"
+)
+
+# Move file to different directory
+file_system_tool(
+    mode="move",
+    path="C:\\Temp\\file.txt",
+    destination="C:\\Archive\\file.txt"
+)
+```
+
+### Delete Mode
+
+Delete files or directories.
+
+```python
+# Delete file
+file_system_tool(mode="delete", path="temp.txt")
+
+# Delete empty directory
+file_system_tool(mode="delete", path="C:\\Temp\\EmptyFolder")
+
+# Delete directory and all contents
+file_system_tool(
+    mode="delete",
+    path="C:\\Temp\\OldProject",
+    recursive=True
+)
+```
+
+### List Mode
+
+List directory contents with optional filtering.
+
+```python
+# List all files in directory
+file_system_tool(mode="list", path="C:\\Documents")
+
+# List only text files
+file_system_tool(
+    mode="list",
+    path="C:\\Documents",
+    pattern="*.txt"
+)
+
+# Recursive listing
+file_system_tool(
+    mode="list",
+    path="C:\\Projects",
+    recursive=True
+)
+
+# Include hidden files
+file_system_tool(
+    mode="list",
+    path="C:\\",
+    show_hidden=True
+)
+```
+
+### Search Mode
+
+Find files matching a glob pattern.
+
+```python
+# Find all Python files
+file_system_tool(
+    mode="search",
+    path="C:\\Projects",
+    pattern="*.py"
+)
+
+# Find files recursively
+file_system_tool(
+    mode="search",
+    path="C:\\Code",
+    pattern="**/*.js",
+    recursive=True
+)
+
+# Find with wildcard
+file_system_tool(
+    mode="search",
+    path="C:\\Logs",
+    pattern="error_202?.log"
+)
+```
+
+### Info Mode
+
+Get file or directory metadata.
+
+```python
+# Get file info
+file_system_tool(mode="info", path="document.pdf")
+
+# Get directory info
+file_system_tool(mode="info", path="C:\\Projects\\MyApp")
+```
+
+Returns information such as:
+- File size
+- Creation date
+- Modification date
+- File type (file/directory)
+- Attributes
+
+## Path Resolution
+
+<Info>
+Relative paths are automatically resolved from the user's **Desktop folder**.
+
+- `notes.txt` → `C:\Users\YourName\Desktop\notes.txt`
+- `folder/file.txt` → `C:\Users\YourName\Desktop\folder\file.txt`
+
+Use absolute paths (starting with drive letter) to access files outside the Desktop.
+</Info>
+
+## Error Handling
+
+The tool returns descriptive error messages for common issues:
+
+```python
+# Missing required parameter
+"Error: content parameter is required for write mode."
+
+# Missing destination for copy
+"Error: destination parameter is required for copy mode."
+
+# Missing pattern for search
+"Error: pattern parameter is required for search mode."
+
+# General errors
+"Error in File tool: <error details>"
+```
+
+## Keywords
+
+file, directory, folder, read, write, copy, move, delete, list, search, metadata
+
+## Tool Annotations
+
+- **Read-only**: No
+- **Destructive**: Yes
+- **Idempotent**: No
+- **Open-world**: No

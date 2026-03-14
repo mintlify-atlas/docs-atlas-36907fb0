@@ -1,0 +1,342 @@
+---
+title: Safe Deployment
+description: Recommended deployment strategies and environments for Windows-MCP
+---
+
+## Recommended Safe Deployment
+
+<Warning>
+  For safer experimentation and usage, **strongly consider** deploying Windows-MCP in isolated environments rather than your primary system.
+</Warning>
+
+The following deployment strategies provide varying levels of isolation and safety:
+
+## Virtual Machines (VMs)
+
+✅ **Recommended** for most use cases
+
+Virtual machines provide excellent isolation and rollback capabilities:
+
+### Supported Platforms
+
+- **VMware Workstation/Fusion**: Professional-grade virtualization
+- **VirtualBox**: Free, open-source virtualization
+- **Hyper-V**: Built into Windows Pro/Enterprise/Education
+- **Parallels Desktop**: macOS virtualization solution
+
+### VM Configuration Best Practices
+
+1. **Take snapshots before each session** for easy rollback
+2. **Isolate the VM from production networks**
+3. **Limit VM access to non-sensitive resources only**
+4. **Use linked clones** for quick test environment creation
+5. **Disable shared folders** unless absolutely necessary
+
+### VM Setup Steps
+
+<Steps>
+  <Step title="Create Windows VM">
+    Install Windows 10/11 in your virtualization platform of choice
+  </Step>
+  <Step title="Take baseline snapshot">
+    Create a snapshot of the clean Windows installation
+  </Step>
+  <Step title="Install Windows-MCP">
+    Set up Python, UV, and install Windows-MCP in the VM
+  </Step>
+  <Step title="Configure network isolation">
+    Set network adapter to "Host-only" or "NAT" mode
+  </Step>
+  <Step title="Take pre-session snapshot">
+    Before each automation session, create a snapshot you can revert to
+  </Step>
+</Steps>
+
+### VM Network Isolation
+
+<Note>
+  Configure VM networking to prevent access to production resources:
+  - **Host-only**: VM can only communicate with host machine
+  - **NAT**: VM can access internet but is isolated from host network
+  - **Internal**: VM can only communicate with other VMs on same virtual network
+</Note>
+
+## Windows Sandbox
+
+✅ **Ideal** for quick testing and throwaway sessions
+
+Windows Sandbox provides a lightweight, disposable desktop environment.
+
+### Requirements
+
+- Windows 10/11 Pro, Enterprise, or Education
+- Virtualization enabled in BIOS
+- At least 4GB RAM (8GB+ recommended)
+- At least 1GB free disk space
+- At least 2 CPU cores (4+ recommended)
+
+### Enabling Windows Sandbox
+
+<Steps>
+  <Step title="Open Windows Features">
+    Press `Win + R`, type `optionalfeatures`, press Enter
+  </Step>
+  <Step title="Enable Windows Sandbox">
+    Check "Windows Sandbox" in the features list
+  </Step>
+  <Step title="Restart computer">
+    Restart to apply the changes
+  </Step>
+  <Step title="Launch Sandbox">
+    Search for "Windows Sandbox" in Start menu
+  </Step>
+</Steps>
+
+### Sandbox Characteristics
+
+- **Ephemeral**: All changes are discarded when closed
+- **Isolated**: Separate from your host operating system
+- **Fast**: Starts in seconds
+- **Clean**: Fresh Windows environment every time
+
+### Using Windows-MCP in Sandbox
+
+<Note>
+  Since Windows Sandbox is ephemeral, you'll need to reinstall Windows-MCP each session or create a configuration file to automate setup.
+</Note>
+
+Create a `.wsb` configuration file:
+
+```xml
+<Configuration>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>C:\Path\To\WindowsMCP</HostFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <LogonCommand>
+    <Command>powershell -ExecutionPolicy Bypass -File C:\Users\WDAGUtilityAccount\Desktop\WindowsMCP\setup.ps1</Command>
+  </LogonCommand>
+</Configuration>
+```
+
+## Containerized Windows Environments
+
+✅ **Advanced** option for CI/CD and automated testing
+
+Windows containers provide isolation for server workloads:
+
+- **Windows Server Containers**: Lightweight, shared kernel
+- **Hyper-V Containers**: Full isolation with dedicated kernel
+
+<Warning>
+  Windows containers have limitations with GUI automation. Desktop automation tools may not work correctly in containerized environments.
+</Warning>
+
+## Dedicated Test Systems
+
+✅ **Recommended** for long-term testing and development
+
+### Physical Test Machines
+
+- **Separate physical machines** used only for testing
+- Systems with **regular backups** and disaster recovery plans
+- Machines that can be **wiped and rebuilt** without consequence
+- Isolated from production networks
+
+### Test System Configuration
+
+1. **Remove all production data** from the system
+2. **Install only necessary applications** for testing
+3. **Configure automated backups** to external storage
+4. **Document the baseline configuration** for quick rebuilds
+5. **Implement network-level isolation** from production environments
+
+## Deployment Use Cases
+
+### Recommended Use Cases
+
+✅ Safe and appropriate:
+
+- **Personal productivity automation** on your own machine
+- **Development and testing environments**
+- **QA automation** in isolated test systems
+- **Controlled demonstrations** with supervision
+- **Educational purposes** in lab environments
+
+### Use with Caution
+
+⚠️ Requires additional controls:
+
+- Shared workstations or multi-user systems
+- Systems with access to production data
+- Environments with compliance requirements (HIPAA, PCI-DSS, etc.)
+- Automated workflows without human oversight
+
+### Not Recommended
+
+❌ Strongly discouraged:
+
+- Production servers or critical infrastructure
+- Systems handling highly sensitive data (financial, medical, personal)
+- Public-facing systems or kiosks
+- Environments where destructive actions cannot be tolerated
+- Systems without proper backups
+
+## Network Isolation Strategies
+
+### Firewall Configuration
+
+Configure Windows Firewall to restrict MCP server access:
+
+```powershell
+# Block all inbound connections to MCP server ports
+New-NetFirewallRule -DisplayName "Block MCP Server" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Block
+
+# Allow only localhost connections
+New-NetFirewallRule -DisplayName "Allow MCP Localhost" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow -RemoteAddress 127.0.0.1
+```
+
+### Network Segmentation
+
+<Note>
+  Place Windows-MCP systems on isolated network segments:
+  - Separate VLAN for automation systems
+  - No direct access to production databases or file shares
+  - Restricted internet access (whitelist only)
+  - Monitored network traffic
+</Note>
+
+## Supervised Operation
+
+### Real-Time Monitoring
+
+When operating Windows-MCP:
+
+1. **Always monitor** the agent's actions in real-time
+2. **Keep screenshots enabled** to see what the agent is doing
+3. **Review commands** before execution when possible
+4. **Have a kill switch** ready to stop the MCP server
+5. **Log all operations** for post-session review
+
+### Session Recording
+
+Consider recording automation sessions:
+
+- Use screen recording software to capture sessions
+- Log all tool invocations and parameters
+- Save snapshots at regular intervals
+- Document unexpected behaviors for troubleshooting
+
+## Backup and Recovery
+
+### Pre-Session Backup
+
+<Warning>
+  Always create a backup before starting an automation session.
+</Warning>
+
+#### For VMs:
+
+1. **Take a snapshot** before each session
+2. **Name snapshots descriptively** (e.g., "Before automation - 2024-01-15")
+3. **Verify snapshot** was created successfully
+4. **Test snapshot restore** periodically
+
+#### For Physical Machines:
+
+1. **Use Windows Backup** or third-party backup software
+2. **Create system restore point** before sessions
+3. **Backup critical data** to external storage
+4. **Document restore procedures**
+
+### Rollback Procedures
+
+Have a documented process for rolling back changes:
+
+<Steps>
+  <Step title="Stop the MCP server">
+    Immediately stop the server if issues occur
+  </Step>
+  <Step title="Assess the damage">
+    Review logs and system state to understand what changed
+  </Step>
+  <Step title="Restore from backup">
+    Revert to VM snapshot or restore from backup
+  </Step>
+  <Step title="Verify restoration">
+    Confirm system is back to expected state
+  </Step>
+  <Step title="Document the incident">
+    Record what happened and lessons learned
+  </Step>
+</Steps>
+
+## Cloud-Based Alternatives
+
+### Cloud VM Providers
+
+Cloud-based Windows VMs for testing:
+
+- **Azure Virtual Machines**: Windows Server and Desktop
+- **AWS EC2**: Windows instances
+- **Google Cloud**: Windows VMs
+
+<Warning>
+  Cloud VMs may incur costs. Monitor usage to avoid unexpected charges.
+</Warning>
+
+### Cloud VM Benefits
+
+- **Easy snapshots and rollback**
+- **Isolated from local network**
+- **Scalable resources** as needed
+- **Pay-per-use** billing
+
+### Cloud VM Considerations
+
+- Additional latency for remote desktop connections
+- Network bandwidth costs for snapshot storage
+- RDP security requirements
+- Data transfer costs
+
+## Testing Before Production
+
+<Note>
+  Always test workflows in a safe environment before any production use.
+</Note>
+
+### Testing Checklist
+
+- [ ] Deploy Windows-MCP in VM or sandbox
+- [ ] Test each tool individually with safe operations
+- [ ] Verify expected behavior with sample data
+- [ ] Test error handling and edge cases
+- [ ] Document successful workflows
+- [ ] Establish rollback procedures
+- [ ] Train users on safe operation
+- [ ] Create runbooks for common tasks
+
+## Security Updates
+
+### Staying Informed
+
+Stay up to date with security announcements:
+
+- **Watch the repository** for security announcements on GitHub
+- **Follow [@CursorTouch](https://x.com/CursorTouch)** on X for updates
+- **Join the [Discord Community](https://discord.com/invite/Aue9Yj2VzS)** for discussions
+
+### Update Policy
+
+- Security patches released as soon as possible
+- Critical vulnerabilities addressed within 7 days
+- Users notified via GitHub releases and community channels
+
+## Next Steps
+
+- Review [Security Overview](/security/overview) for threat context
+- Implement [Best Practices](/security/best-practices) for your deployment
+- Set up monitoring and logging
+- Create backup and recovery procedures

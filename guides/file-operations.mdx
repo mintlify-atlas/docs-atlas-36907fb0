@@ -1,0 +1,856 @@
+---
+title: File Operations
+description: Working with files and directories using the FileSystem tool
+---
+
+## Overview
+
+The **FileSystem** tool provides structured file operations as a safe alternative to PowerShell commands. It supports 8 modes for reading, writing, copying, moving, deleting, listing, searching, and inspecting files and directories.
+
+## FileSystem Tool Modes
+
+All file operations use a single `FileSystem` tool with different modes:
+
+| Mode | Purpose | Key Parameters |
+|------|---------|----------------|
+| `read` | Read file contents | `path`, `offset`, `limit`, `encoding` |
+| `write` | Create or modify files | `path`, `content`, `append`, `encoding` |
+| `copy` | Copy files/directories | `path`, `destination`, `overwrite` |
+| `move` | Move or rename | `path`, `destination`, `overwrite` |
+| `delete` | Delete files/directories | `path`, `recursive` |
+| `list` | List directory contents | `path`, `pattern`, `recursive`, `show_hidden` |
+| `search` | Find files by pattern | `path`, `pattern`, `recursive` |
+| `info` | Get file metadata | `path` |
+
+## Path Resolution
+
+### Default Base Directory
+
+Relative paths are resolved from the **user's Desktop**:
+
+```javascript
+// Reads from Desktop/report.txt
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "read",
+    path: "report.txt"  // Relative to Desktop
+  }
+});
+```
+
+### Absolute Paths
+
+Use absolute paths to access other locations:
+
+```javascript
+// Reads from C:\Projects\README.md
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "read",
+    path: "C:\\Projects\\README.md"  // Absolute path
+  }
+});
+```
+
+## Reading Files
+
+### Basic File Read
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "read",
+    path: "C:\\Users\\John\\Documents\\notes.txt"
+  }
+});
+```
+
+**Output:**
+```
+File: C:\Users\John\Documents\notes.txt
+Meeting notes from 2024-01-15
+Discussed project timeline and deliverables...
+```
+
+### Reading with Offset and Limit
+
+For large files, read specific line ranges:
+
+```javascript
+// Read lines 100-200
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "read",
+    path: "C:\\logs\\application.log",
+    offset: 100,  // Start at line 100 (1-based)
+    limit: 100    // Read 100 lines
+  }
+});
+```
+
+**Output:**
+```
+File: C:\logs\application.log
+Lines 100-200 of 5432:
+[2024-01-15 10:23:45] INFO Starting service...
+[2024-01-15 10:23:46] INFO Connected to database...
+...
+```
+
+### Reading with Different Encoding
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "read",
+    path: "data.csv",
+    encoding: "utf-8"  // Default, also supports 'latin-1', 'ascii', etc.
+  }
+});
+```
+
+### File Size Limit
+
+Maximum file size for `read` mode: **10 MB**
+
+For larger files:
+- Use `offset` and `limit` to read in chunks
+- Or use PowerShell tool for streaming
+
+## Writing Files
+
+### Create New File
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "write",
+    path: "C:\\temp\\output.txt",
+    content: "This is the file content.\nSecond line here."
+  }
+});
+```
+
+**Output:**
+```
+Written to C:\temp\output.txt (45 bytes)
+```
+
+### Overwrite Existing File
+
+```javascript
+// Default behavior: overwrites existing file
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "write",
+    path: "report.txt",
+    content: "New content replaces old content."
+  }
+});
+```
+
+### Append to File
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "write",
+    path: "log.txt",
+    content: "\n[2024-01-15] New log entry",
+    append: true  // Add to end of file
+  }
+});
+```
+
+**Output:**
+```
+Appended to C:\Users\John\Desktop\log.txt (156 bytes)
+```
+
+### Auto-Create Parent Directories
+
+```javascript
+// Creates C:\data\reports\ if it doesn't exist
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "write",
+    path: "C:\\data\\reports\\january\\summary.txt",
+    content: "Summary content..."
+  }
+});
+// Parent directories are created automatically
+```
+
+## Copying Files and Directories
+
+### Copy Single File
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "copy",
+    path: "C:\\Projects\\report.docx",
+    destination: "C:\\Backup\\report_backup.docx"
+  }
+});
+```
+
+**Output:**
+```
+Copied file: C:\Projects\report.docx -> C:\Backup\report_backup.docx
+```
+
+### Copy Directory
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "copy",
+    path: "C:\\Projects\\WebApp",
+    destination: "C:\\Backup\\WebApp"
+  }
+});
+```
+
+**Output:**
+```
+Copied directory: C:\Projects\WebApp -> C:\Backup\WebApp
+```
+
+### Overwrite on Copy
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "copy",
+    path: "source.txt",
+    destination: "dest.txt",
+    overwrite: true  // Replace if dest.txt exists
+  }
+});
+```
+
+## Moving and Renaming
+
+### Move File
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "move",
+    path: "C:\\Downloads\\document.pdf",
+    destination: "C:\\Documents\\document.pdf"
+  }
+});
+```
+
+**Output:**
+```
+Moved: C:\Downloads\document.pdf -> C:\Documents\document.pdf
+```
+
+### Rename File
+
+```javascript
+// Moving within same directory = rename
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "move",
+    path: "old_name.txt",
+    destination: "new_name.txt"
+  }
+});
+```
+
+### Move Directory
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "move",
+    path: "C:\\temp\\project",
+    destination: "C:\\Projects\\project",
+    overwrite: false  // Fail if destination exists
+  }
+});
+```
+
+## Deleting Files and Directories
+
+### Delete File
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "delete",
+    path: "C:\\temp\\cache.tmp"
+  }
+});
+```
+
+**Output:**
+```
+Deleted file: C:\temp\cache.tmp
+```
+
+### Delete Empty Directory
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "delete",
+    path: "C:\\temp\\empty_folder",
+    recursive: false  // Only works if empty
+  }
+});
+```
+
+### Delete Directory with Contents
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "delete",
+    path: "C:\\temp\\old_project",
+    recursive: true  // Delete all contents
+  }
+});
+```
+
+**Output:**
+```
+Deleted directory: C:\temp\old_project
+```
+
+<Warning>
+Be careful with `recursive: true` - it permanently deletes all files and subdirectories.
+</Warning>
+
+## Listing Directory Contents
+
+### Basic Directory Listing
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "list",
+    path: "C:\\Projects"
+  }
+});
+```
+
+**Output:**
+```
+Directory: C:\Projects
+  [DIR ] WebApp
+  [DIR ] API
+  [FILE] README.md  2.3 KB
+  [FILE] setup.py   1.1 KB
+```
+
+### List with Pattern Filter
+
+```javascript
+// Show only .txt files
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "list",
+    path: "C:\\Documents",
+    pattern: "*.txt"
+  }
+});
+```
+
+**Output:**
+```
+Directory: C:\Documents (filter: *.txt)
+  [FILE] notes.txt     3.5 KB
+  [FILE] todo.txt      1.2 KB
+  [FILE] readme.txt    5.8 KB
+```
+
+### Recursive Listing
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "list",
+    path: "C:\\Projects",
+    recursive: true  // Include subdirectories
+  }
+});
+```
+
+**Output:**
+```
+Directory: C:\Projects
+  [DIR ] WebApp
+  [FILE] WebApp\index.html   4.2 KB
+  [FILE] WebApp\style.css    2.1 KB
+  [DIR ] API
+  [FILE] API\server.py       8.5 KB
+  [FILE] README.md           2.3 KB
+```
+
+### Show Hidden Files
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "list",
+    path: "C:\\Projects",
+    show_hidden: true  // Include .hidden files
+  }
+});
+```
+
+### Result Limit
+
+Maximum results returned: **500 items**
+
+If truncated:
+```
+Directory: C:\Windows\System32
+  [FILE] kernel32.dll  1.2 MB
+  [FILE] ntdll.dll     2.1 MB
+  ...
+  ... (truncated, 500+ items)
+```
+
+## Searching for Files
+
+### Basic Search
+
+```javascript
+// Find all Python files in Projects
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "search",
+    path: "C:\\Projects",
+    pattern: "*.py",
+    recursive: true  // Search subdirectories (default)
+  }
+});
+```
+
+**Output:**
+```
+Search: "*.py" in C:\Projects (15 matches)
+  [FILE] API\server.py       8.5 KB
+  [FILE] API\routes.py       3.2 KB
+  [FILE] utils\helpers.py    2.1 KB
+  [FILE] tests\test_api.py   5.4 KB
+  ...
+```
+
+### Complex Patterns
+
+```javascript
+// Find all markdown and text files
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "search",
+    path: "C:\\Documents",
+    pattern: "*.{md,txt}",  // Multiple extensions
+    recursive: true
+  }
+});
+```
+
+### Non-Recursive Search
+
+```javascript
+// Search only in C:\Downloads, not subdirectories
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "search",
+    path: "C:\\Downloads",
+    pattern: "*.pdf",
+    recursive: false
+  }
+});
+```
+
+### Wildcard Examples
+
+- `*.txt` - All .txt files
+- `report_*.docx` - Files starting with "report_"
+- `*2024*` - Files containing "2024"
+- `data?.csv` - data1.csv, dataA.csv (single character)
+- `**/*.js` - All .js files in any subdirectory
+
+## Getting File Information
+
+### File Metadata
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "info",
+    path: "C:\\Projects\\report.docx"
+  }
+});
+```
+
+**Output:**
+```
+Path: C:\Projects\report.docx
+Type: File
+Size: 245.3 KB (251,234 bytes)
+Created: 2024-01-10 14:30:22
+Modified: 2024-01-15 09:15:43
+Accessed: 2024-01-15 11:22:10
+Read-only: False
+Extension: .docx
+```
+
+### Directory Metadata
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "info",
+    path: "C:\\Projects\\WebApp"
+  }
+});
+```
+
+**Output:**
+```
+Path: C:\Projects\WebApp
+Type: Directory
+Size: 0 B (0 bytes)
+Created: 2024-01-05 10:00:00
+Modified: 2024-01-14 16:45:30
+Accessed: 2024-01-15 11:20:00
+Read-only: False
+Contents: 15 files, 3 directories
+```
+
+## Common Workflows
+
+### Backup Files
+
+```javascript
+// 1. Check if source exists
+const fileInfo = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "info",
+    path: "important_data.xlsx"
+  }
+});
+
+// 2. Create backup with timestamp
+const timestamp = new Date().toISOString().replace(/:/g, '-');
+const backupName = `important_data_backup_${timestamp}.xlsx`;
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "copy",
+    path: "important_data.xlsx",
+    destination: `C:\\Backups\\${backupName}"
+  }
+});
+```
+
+### Organize Downloads
+
+```javascript
+// 1. List all files in Downloads
+const downloads = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "list",
+    path: "C:\\Users\\John\\Downloads",
+    recursive: false
+  }
+});
+
+// 2. Move PDFs to Documents
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "search",
+    path: "C:\\Users\\John\\Downloads",
+    pattern: "*.pdf",
+    recursive: false
+  }
+});
+
+// 3. Move each PDF (would need iteration)
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "move",
+    path: "C:\\Users\\John\\Downloads\\report.pdf",
+    destination: "C:\\Users\\John\\Documents\\PDFs\\report.pdf"
+  }
+});
+```
+
+### Generate File Report
+
+```javascript
+// 1. Search for all Python files
+const pythonFiles = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "search",
+    path: "C:\\Projects",
+    pattern: "*.py",
+    recursive: true
+  }
+});
+
+// 2. Get info for each file (example for one)
+const fileInfo = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "info",
+    path: "C:\\Projects\\API\\server.py"
+  }
+});
+
+// 3. Write report
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "write",
+    path: "C:\\Reports\\python_files_report.txt",
+    content: `Python Files Report\n================\n${pythonFiles}\n\nDetails:\n${fileInfo}`
+  }
+});
+```
+
+### Clean Temp Files
+
+```javascript
+// 1. List temp directory
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "list",
+    path: "C:\\temp"
+  }
+});
+
+// 2. Delete specific temp files
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "delete",
+    path: "C:\\temp\\cache_folder",
+    recursive: true
+  }
+});
+```
+
+## Error Handling
+
+### File Not Found
+
+```javascript
+// Error: File not found: C:\missing.txt
+```
+
+### Permission Denied
+
+```javascript
+// Error: Permission denied: C:\Windows\System32\config\SAM
+```
+
+### File Too Large
+
+```javascript
+// Error: File too large (25,234,567 bytes). Maximum is 10,485,760 bytes.
+// Use offset/limit parameters or the Shell tool for large files.
+```
+
+### Destination Exists
+
+```javascript
+// Error: Destination already exists: C:\dest.txt. Set overwrite=True to replace.
+```
+
+### Directory Not Empty
+
+```javascript
+// Error: Directory is not empty: C:\folder. Set recursive=True to delete non-empty directories.
+```
+
+## Best Practices
+
+### 1. Use FileSystem Over PowerShell for File Operations
+
+```javascript
+// GOOD: Structured, safe
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "copy",
+    path: "source.txt",
+    destination: "backup.txt"
+  }
+});
+
+// AVOID: Error-prone, harder to parse
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "PowerShell",
+  arguments: {
+    command: "Copy-Item source.txt backup.txt"
+  }
+});
+```
+
+### 2. Check Before Destructive Operations
+
+```javascript
+// Check what will be deleted
+const preview = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "list",
+    path: "C:\\temp\\cache",
+    recursive: true
+  }
+});
+
+// Then delete if appropriate
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "delete",
+    path: "C:\\temp\\cache",
+    recursive: true
+  }
+});
+```
+
+### 3. Use Absolute Paths for Critical Operations
+
+```javascript
+// GOOD: Explicit location
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "delete",
+    path: "C:\\temp\\specific_file.tmp"
+  }
+});
+
+// RISKY: Might be relative to Desktop
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "delete",
+    path: "temp\\file.tmp"  // Where is this?
+  }
+});
+```
+
+### 4. Use Info Before Processing
+
+```javascript
+// Get file size before reading
+const info = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "info",
+    path: "largefile.log"
+  }
+});
+
+// If too large, read in chunks
+if (info.includes("MB") && parseSize(info) > 5) {
+  // Read first 1000 lines only
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "FileSystem",
+    arguments: {
+      mode: "read",
+      path: "largefile.log",
+      offset: 1,
+      limit: 1000
+    }
+  });
+}
+```
+
+## Next Steps
+
+- [Desktop Automation](/guides/desktop-automation) - UI interaction techniques
+- [Process Management](/guides/process-management) - Managing running applications
+- [Troubleshooting](/guides/troubleshooting) - Common issues and solutions

@@ -1,0 +1,744 @@
+---
+title: Installation
+description: Complete installation guide for Windows-MCP across all platforms and MCP clients
+---
+
+Windows-MCP can be installed via PyPI (recommended) or from source. This guide covers installation for Claude Desktop, Perplexity Desktop, Gemini CLI, Qwen Code, and Codex CLI.
+
+## Prerequisites
+
+Before installing Windows-MCP, ensure your system meets these requirements:
+
+<CardGroup cols={2}>
+  <Card title="Operating System" icon="windows">
+    - Windows 7
+    - Windows 8 / 8.1
+    - Windows 10
+    - Windows 11
+  </Card>
+  <Card title="Software Requirements" icon="code">
+    - Python 3.13 or higher
+    - UV package manager
+    - MCP client (Claude Desktop, etc.)
+  </Card>
+</CardGroup>
+
+### Installing Prerequisites
+
+<Steps>
+  <Step title="Install Python 3.13+">
+    Download and install Python from [python.org/downloads](https://www.python.org/downloads/).
+
+    Verify installation:
+    ```bash
+    python --version
+    # Should output: Python 3.13.x or higher
+    ```
+  </Step>
+
+  <Step title="Install UV Package Manager">
+    UV is a fast Python package manager from Astral. Install it using one of these methods:
+
+    <CodeGroup>
+    ```bash pip
+    pip install uv
+    ```
+
+    ```bash curl (Linux/macOS)
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+    ```powershell PowerShell (Windows)
+    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+    ```
+    </CodeGroup>
+
+    Verify installation:
+    ```bash
+    uv --version
+    ```
+  </Step>
+</Steps>
+
+## Installation Methods
+
+Windows-MCP supports two installation methods:
+
+<Tabs>
+  <Tab title="PyPI (Recommended)">
+    The simplest installation method using `uvx` to run directly from PyPI:
+
+    ```bash
+    uvx windows-mcp
+    ```
+
+    This automatically:
+    - Downloads the latest version from PyPI
+    - Installs all dependencies in an isolated environment
+    - Runs the MCP server
+
+    **Advantages:**
+    - No manual dependency management
+    - Always get the latest stable version
+    - Automatic updates with `uvx windows-mcp@latest`
+    - Minimal configuration
+  </Tab>
+
+  <Tab title="From Source">
+    For development or customization, install from the GitHub repository:
+
+    <Steps>
+      <Step title="Clone Repository">
+        ```bash
+        git clone https://github.com/CursorTouch/Windows-MCP.git
+        cd Windows-MCP
+        ```
+      </Step>
+
+      <Step title="Install Dependencies">
+        ```bash
+        uv sync
+        ```
+
+        This installs all dependencies from `pyproject.toml`:
+        - `fastmcp` - MCP server framework
+        - `comtypes` - Windows COM automation
+        - `pillow` - Screenshot capture
+        - `pywin32` - Windows API bindings
+        - `fuzzywuzzy` - Fuzzy string matching
+        - And 10+ more dependencies
+      </Step>
+
+      <Step title="Verify Installation">
+        ```bash
+        uv run windows-mcp --help
+        ```
+
+        You should see:
+        ```
+        Usage: windows-mcp [OPTIONS]
+
+        Options:
+          --transport [stdio|sse|streamable-http]
+          --host TEXT
+          --port INTEGER
+          --help
+        ```
+      </Step>
+    </Steps>
+
+    **Advantages:**
+    - Full source code access
+    - Ability to modify and extend tools
+    - Contribute to development
+    - Run latest unreleased features
+  </Tab>
+</Tabs>
+
+## MCP Client Installation
+
+### Claude Desktop
+
+Claude Desktop is the most popular MCP client for Windows-MCP with **2M+ users**.
+
+<Steps>
+  <Step title="Install Claude Desktop">
+    Download from [claude.ai/download](https://claude.ai/download).
+
+    Two versions are available:
+    - **Standard Installer** (`.exe`): Recommended for most users
+    - **Windows Store (MSIX)**: Sandboxed version with different config location
+  </Step>
+
+  <Step title="Locate Configuration File">
+    The config file location depends on your installation method:
+
+    <Tabs>
+      <Tab title="Standard Installation">
+        ```
+        %APPDATA%\Claude\claude_desktop_config.json
+        ```
+
+        Full path:
+        ```
+        C:\Users\<YourUsername>\AppData\Roaming\Claude\claude_desktop_config.json
+        ```
+      </Tab>
+
+      <Tab title="Windows Store (MSIX)">
+        ```
+        %LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json
+        ```
+
+        <Warning>
+        The MSIX version virtualizes `%APPDATA%`. The "Edit Config" button in Claude Desktop may open the wrong file. Use the path above instead.
+        </Warning>
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Configure MCP Server">
+    Open or create `claude_desktop_config.json` and add the Windows-MCP configuration:
+
+    <Tabs>
+      <Tab title="PyPI Installation">
+        ```json claude_desktop_config.json
+        {
+          "mcpServers": {
+            "windows-mcp": {
+              "command": "uvx",
+              "args": [
+                "windows-mcp"
+              ]
+            }
+          }
+        }
+        ```
+      </Tab>
+
+      <Tab title="From Source">
+        ```json claude_desktop_config.json
+        {
+          "mcpServers": {
+            "windows-mcp": {
+              "command": "uv",
+              "args": [
+                "--directory",
+                "C:\\Users\\<YourUsername>\\Windows-MCP",
+                "run",
+                "windows-mcp"
+              ]
+            }
+          }
+        }
+        ```
+
+        Replace `<YourUsername>` with your Windows username and adjust the path to where you cloned the repository.
+      </Tab>
+
+      <Tab title="Windows Store (MSIX)">
+        The MSIX-packaged version requires **full absolute paths** because Electron apps don't inherit PATH:
+
+        ```json claude_desktop_config.json
+        {
+          "mcpServers": {
+            "windows-mcp": {
+              "command": "C:\\Users\\<YourUsername>\\.local\\bin\\uv.exe",
+              "args": [
+                "run",
+                "windows-mcp"
+              ]
+            }
+          }
+        }
+        ```
+
+        **Find your `uv.exe` path:**
+        ```powershell
+        where uv
+        # Common locations:
+        # C:\Users\<YourUsername>\.local\bin\uv.exe
+        # C:\Python313\Scripts\uv.exe
+        ```
+
+        <Warning>
+        Save the file as **UTF-8 without BOM**. PowerShell's `Set-Content -Encoding UTF8` adds a BOM that breaks JSON parsing. Use Notepad or VS Code instead.
+        </Warning>
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Restart Claude Desktop">
+    Close and reopen Claude Desktop to load the MCP server.
+
+    <Note>
+    On first run, dependency installation may take 1-2 minutes. If the server times out, simply restart Claude Desktop.
+    </Note>
+  </Step>
+
+  <Step title="Verify Installation">
+    In a new Claude conversation, you should see the 🔨 hammer icon indicating MCP tools are available.
+
+    Test with:
+    ```
+    "Take a snapshot of my desktop"
+    ```
+
+    Claude should call the `Snapshot` tool and return information about your desktop state.
+  </Step>
+</Steps>
+
+### Perplexity Desktop
+
+Perplexity Desktop supports MCP servers through its connector system.
+
+<Steps>
+  <Step title="Install Perplexity Desktop">
+    Download from the [Microsoft Store](https://apps.microsoft.com/detail/xp8jnqfbqh6pvf).
+  </Step>
+
+  <Step title="Add MCP Connector">
+    1. Open Perplexity Desktop
+    2. Navigate to **Settings → Connectors → Add Connector → Advanced**
+    3. Enter **Name**: `Windows-MCP`
+  </Step>
+
+  <Step title="Configure Connector">
+    Paste the appropriate configuration:
+
+    <Tabs>
+      <Tab title="PyPI Installation">
+        ```json
+        {
+          "command": "uvx",
+          "args": [
+            "windows-mcp"
+          ]
+        }
+        ```
+      </Tab>
+
+      <Tab title="From Source">
+        ```json
+        {
+          "command": "uv",
+          "args": [
+            "--directory",
+            "C:\\path\\to\\Windows-MCP",
+            "run",
+            "windows-mcp"
+          ]
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Save and Test">
+    Click **Save** and test the connector by asking Perplexity to use Windows-MCP tools.
+  </Step>
+</Steps>
+
+For troubleshooting, see [Perplexity MCP Support](https://www.perplexity.ai/help-center/en/articles/11502712-local-and-remote-mcps-for-perplexity).
+
+### Gemini CLI
+
+Google's Gemini CLI supports MCP servers for command-line AI interactions.
+
+<Steps>
+  <Step title="Install Gemini CLI">
+    ```bash
+    npm install -g @google/gemini-cli
+    ```
+  </Step>
+
+  <Step title="Configure MCP Server">
+    1. Navigate to `%USERPROFILE%\.gemini` in File Explorer
+    2. Open or create `settings.json`
+    3. Add Windows-MCP configuration:
+
+    ```json settings.json
+    {
+      "theme": "Default",
+      "mcpServers": {
+        "windows-mcp": {
+          "command": "uvx",
+          "args": [
+            "windows-mcp"
+          ]
+        }
+      }
+    }
+    ```
+
+    <Note>
+    For source installation, use `"command": "uv"` with args `["--directory", "<path>", "run", "windows-mcp"]`.
+    </Note>
+  </Step>
+
+  <Step title="Restart Gemini CLI">
+    ```bash
+    gemini
+    ```
+
+    The Windows-MCP tools should be available in your Gemini CLI session.
+  </Step>
+</Steps>
+
+### Qwen Code
+
+Qwen Code is an AI coding assistant that supports MCP servers.
+
+<Steps>
+  <Step title="Install Qwen Code">
+    ```bash
+    npm install -g @qwen-code/qwen-code@latest
+    ```
+  </Step>
+
+  <Step title="Configure MCP Server">
+    1. Navigate to `%USERPROFILE%\.qwen`
+    2. Open or create `settings.json`
+    3. Add configuration:
+
+    ```json settings.json
+    {
+      "mcpServers": {
+        "windows-mcp": {
+          "command": "uvx",
+          "args": [
+            "windows-mcp"
+          ]
+        }
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Run Qwen Code">
+    ```bash
+    qwen-code
+    ```
+  </Step>
+</Steps>
+
+### Codex CLI
+
+OpenAI's Codex CLI interface supports MCP servers via TOML configuration.
+
+<Steps>
+  <Step title="Install Codex CLI">
+    ```bash
+    npm install -g @openai/codex
+    ```
+  </Step>
+
+  <Step title="Configure MCP Server">
+    1. Navigate to `%USERPROFILE%\.codex`
+    2. Open or create `config.toml`
+    3. Add configuration:
+
+    ```toml config.toml
+    [mcp_servers.windows-mcp]
+    command = "uvx"
+    args = [
+      "windows-mcp"
+    ]
+    ```
+
+    <Note>
+    For source installation, use `command = "uv"` with args `["--directory", "<path>", "run", "windows-mcp"]`.
+    </Note>
+  </Step>
+
+  <Step title="Run Codex CLI">
+    ```bash
+    codex
+    ```
+  </Step>
+</Steps>
+
+## Advanced Configuration
+
+### Transport Options
+
+Windows-MCP supports three transport protocols:
+
+<Tabs>
+  <Tab title="stdio (Default)">
+    Standard input/output transport for direct MCP client connections:
+
+    ```bash
+    uvx windows-mcp
+    # or
+    uv run windows-mcp --transport stdio
+    ```
+
+    **Use cases:**
+    - Claude Desktop
+    - Perplexity Desktop
+    - Local MCP clients
+  </Tab>
+
+  <Tab title="SSE (Server-Sent Events)">
+    Network-accessible server using Server-Sent Events:
+
+    ```bash
+    uvx windows-mcp --transport sse --host localhost --port 8000
+    ```
+
+    **Use cases:**
+    - Network-based MCP clients
+    - Multiple client connections
+    - Remote desktop automation
+  </Tab>
+
+  <Tab title="Streamable HTTP">
+    Network-accessible server using HTTP streaming (recommended for production):
+
+    ```bash
+    uvx windows-mcp --transport streamable-http --host localhost --port 8000
+    ```
+
+    **Use cases:**
+    - Production deployments
+    - Load-balanced environments
+    - Enterprise integrations
+  </Tab>
+</Tabs>
+
+### Remote Mode
+
+Windows-MCP supports remote mode for cloud-hosted Windows automation via [windowsmcp.io](https://windowsmcp.io).
+
+<Steps>
+  <Step title="Get API Credentials">
+    1. Sign up at [windowsmcp.io](https://windowsmcp.io)
+    2. Create a Windows VM/sandbox
+    3. Get your `SANDBOX_ID` and `API_KEY`
+  </Step>
+
+  <Step title="Configure Remote Mode">
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "windows-mcp": {
+          "command": "uvx",
+          "args": [
+            "windows-mcp"
+          ],
+          "env": {
+            "MODE": "remote",
+            "SANDBOX_ID": "your-sandbox-id",
+            "API_KEY": "your-api-key"
+          }
+        }
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Connect to Remote Desktop">
+    Restart your MCP client. Windows-MCP will connect to the remote Windows VM and proxy all commands.
+  </Step>
+</Steps>
+
+**Environment Variables:**
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `MODE` | Set to `remote` for remote mode | Yes |
+| `SANDBOX_ID` | Your sandbox/VM identifier | Yes |
+| `API_KEY` | Your Windows-MCP API key | Yes |
+
+### Telemetry Configuration
+
+Windows-MCP collects anonymized usage data (tool names and errors only, no arguments or outputs). To disable:
+
+```json claude_desktop_config.json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "uvx",
+      "args": ["windows-mcp"],
+      "env": {
+        "ANONYMIZED_TELEMETRY": "false"
+      }
+    }
+  }
+}
+```
+
+For details on data collection, see [Telemetry and Data Privacy](https://github.com/CursorTouch/Windows-MCP/blob/main/SECURITY.md#telemetry-and-data-privacy).
+
+### Language Configuration
+
+<Warning>
+The `App` tool is optimized for **English Windows**. If you're using Windows in another language, you may experience issues.
+</Warning>
+
+**Workarounds:**
+1. **Use PowerShell for app launching:**
+   ```python
+   PowerShell(command='Start-Process notepad')
+   ```
+
+2. **Disable App tool and use alternatives:**
+   - Launch apps: `PowerShell(command='Start-Process <app>')`
+   - Resize windows: Use UI Automation via `Click` and `Move` tools
+   - Switch apps: `Shortcut(shortcut='alt+tab')`
+
+## Development Setup
+
+For contributing to Windows-MCP or extending functionality:
+
+<Steps>
+  <Step title="Fork and Clone">
+    ```bash
+    git clone https://github.com/<your-username>/Windows-MCP.git
+    cd Windows-MCP
+    ```
+  </Step>
+
+  <Step title="Install Dependencies">
+    ```bash
+    # Install runtime dependencies
+    uv sync
+
+    # Install development dependencies
+    uv sync --extra dev
+    ```
+
+    Development dependencies include:
+    - `ruff` - Code formatter and linter
+    - `pytest` - Testing framework
+    - `pytest-asyncio` - Async test support
+  </Step>
+
+  <Step title="Run Tests">
+    ```bash
+    pytest
+    ```
+  </Step>
+
+  <Step title="Code Formatting">
+    ```bash
+    # Format code
+    ruff format .
+
+    # Lint code
+    ruff check .
+
+    # Auto-fix lint issues
+    ruff check --fix .
+    ```
+  </Step>
+</Steps>
+
+For detailed contribution guidelines, see [CONTRIBUTING.md](https://github.com/CursorTouch/Windows-MCP/blob/main/CONTRIBUTING.md).
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Server times out on first run">
+    **Cause:** Dependency installation takes 1-2 minutes on first run.
+
+    **Solution:** Simply restart your MCP client (Claude Desktop, etc.). Subsequent starts will be instant.
+  </Accordion>
+
+  <Accordion title="'spawn ENOENT' error">
+    **Cause:** The MSIX-packaged Claude Desktop doesn't inherit system PATH.
+
+    **Solution:** Use the full absolute path to `uv.exe`:
+
+    ```json
+    {
+      "mcpServers": {
+        "windows-mcp": {
+          "command": "C:\\Users\\<YourUsername>\\.local\\bin\\uv.exe",
+          "args": ["run", "windows-mcp"]
+        }
+      }
+    }
+    ```
+
+    Find your path:
+    ```bash
+    where uv
+    ```
+  </Accordion>
+
+  <Accordion title="Python version mismatch">
+    **Cause:** Windows-MCP requires Python 3.13+.
+
+    **Solution:**
+    1. Check Python version: `python --version`
+    2. Download Python 3.13+ from [python.org](https://www.python.org/downloads/)
+    3. Reinstall `uv`: `pip install --upgrade uv`
+  </Accordion>
+
+  <Accordion title="JSON parsing error in config file">
+    **Cause:** Config file has invalid JSON syntax or BOM (Byte Order Mark).
+
+    **Solution:**
+    1. Validate JSON syntax at [jsonlint.com](https://jsonlint.com/)
+    2. Save as **UTF-8 without BOM** (use Notepad, VS Code, or another modern editor)
+    3. Ensure proper escaping of backslashes in paths: `C:\\Users\\...`
+  </Accordion>
+
+  <Accordion title="Tools not appearing in Claude Desktop">
+    **Cause:** MCP server failed to start or configuration is incorrect.
+
+    **Solution:**
+    1. Check Claude Desktop logs:
+       - **Standard**: `%APPDATA%\Claude\logs\`
+       - **MSIX**: `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\logs\`
+    2. Verify config file location and syntax
+    3. Test server manually: `uvx windows-mcp --help`
+  </Accordion>
+
+  <Accordion title="Permission denied errors">
+    **Cause:** Windows-MCP requires appropriate permissions for system operations.
+
+    **Solution:**
+    - Run MCP client as Administrator (not recommended for security)
+    - Use Windows VM or Sandbox for testing
+    - Check Windows User Account Control (UAC) settings
+  </Accordion>
+</AccordionGroup>
+
+For more troubleshooting help:
+- **Claude Desktop**: [MCP Documentation](https://modelcontextprotocol.io/quickstart/server#claude-for-desktop-integration-issues)
+- **Discord**: [Join our community](https://discord.com/invite/Aue9Yj2VzS)
+- **GitHub Issues**: [Report a bug](https://github.com/CursorTouch/Windows-MCP/issues)
+
+## Uninstallation
+
+<Steps>
+  <Step title="Remove MCP Client Configuration">
+    Remove the `windows-mcp` entry from your MCP client's configuration file:
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        // Remove or comment out:
+        // "windows-mcp": { ... }
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Remove Source Code (if installed from source)">
+    ```bash
+    rm -rf C:\path\to\Windows-MCP
+    ```
+  </Step>
+
+  <Step title="Remove UV Cache (optional)">
+    ```bash
+    # Remove uvx cache
+    rm -rf %USERPROFILE%\.local\share\uv
+    ```
+  </Step>
+</Steps>
+
+<Note>
+PyPI installations via `uvx` are automatically cleaned up and don't require manual removal.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get started with your first Windows-MCP automation
+  </Card>
+  <Card title="Tool Reference" icon="wrench" href="/tools">
+    Explore all 15 Windows-MCP tools
+  </Card>
+  <Card title="Guides" icon="code" href="/guides/desktop-automation">
+    Real-world automation examples and workflows
+  </Card>
+  <Card title="Security Policy" icon="shield" href="https://github.com/CursorTouch/Windows-MCP/blob/main/SECURITY.md">
+    Important security considerations
+  </Card>
+</CardGroup>

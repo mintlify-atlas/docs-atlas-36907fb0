@@ -1,0 +1,134 @@
+---
+title: Perplexity Desktop
+description: Configure Windows-MCP for Perplexity Desktop
+---
+
+Perplexity Desktop supports MCP connectors through its Advanced settings interface.
+
+## Prerequisites
+
+- Python 3.13+
+- UV package manager: `pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- [Perplexity Desktop](https://apps.microsoft.com/detail/xp8jnqfbqh6pvf)
+- English as the default Windows language (preferred, otherwise disable the App-Tool)
+
+## Installation
+
+<Steps>
+  <Step title="Install Perplexity Desktop">
+    Download and install [Perplexity Desktop](https://apps.microsoft.com/detail/xp8jnqfbqh6pvf) from the Microsoft Store.
+  </Step>
+
+  <Step title="Open Connector Settings">
+    In Perplexity Desktop, navigate to:
+    ```
+    Settings → Connectors → Add Connector → Advanced
+    ```
+  </Step>
+
+  <Step title="Configure Windows-MCP">
+    Enter the name as **Windows-MCP**, then paste the configuration JSON in the text area.
+  </Step>
+
+  <Step title="Save and Start">
+    Click **Save** and the MCP server will be available immediately.
+  </Step>
+</Steps>
+
+## Configuration Options
+
+### Option A: Install from PyPI (Recommended)
+
+Use `uvx` to run the latest version directly from PyPI.
+
+Paste this configuration in the Advanced connector settings:
+
+```json
+{
+  "command": "uvx",
+  "args": [
+    "windows-mcp"
+  ]
+}
+```
+
+### Option B: Install from Source
+
+<Steps>
+  <Step title="Clone the repository">
+    ```shell
+    git clone https://github.com/CursorTouch/Windows-MCP.git
+    cd Windows-MCP
+    ```
+  </Step>
+
+  <Step title="Configure with path">
+    Paste this configuration in the Advanced connector settings:
+
+    ```json
+    {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "<path to the windows-mcp directory>",
+        "run",
+        "windows-mcp"
+      ]
+    }
+    ```
+
+    Replace `<path to the windows-mcp directory>` with the actual path where you cloned the repository.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### First Run Timeout
+
+When you install this MCP server for the first time, it may take a minute or two to install dependencies from `pyproject.toml`. The server may timeout on the first run - just ignore it and restart Perplexity Desktop.
+
+### Checking Logs
+
+For additional troubleshooting, see the [Perplexity MCP Support](https://www.perplexity.ai/help-center/en/articles/11502712-local-and-remote-mcps-for-perplexity) documentation. It includes helpful tips for checking logs and resolving common issues.
+
+### Path Not Found Errors
+
+- Verify `uv.exe` is installed: `where uv` in a terminal
+- Use absolute paths with double backslashes if needed
+- Check that the Windows-MCP directory path is correct
+
+## Additional Configuration
+
+### Disable Telemetry
+
+To disable telemetry, add an `env` section to your configuration:
+
+```json
+{
+  "command": "uvx",
+  "args": [
+    "windows-mcp"
+  ],
+  "env": {
+    "ANONYMIZED_TELEMETRY": "false"
+  }
+}
+```
+
+### Remote Mode
+
+For cloud-hosted Windows automation via [windowsmcp.io](https://windowsmcp.io):
+
+```json
+{
+  "command": "uvx",
+  "args": [
+    "windows-mcp"
+  ],
+  "env": {
+    "MODE": "remote",
+    "SANDBOX_ID": "your-sandbox-id",
+    "API_KEY": "your-api-key"
+  }
+}
+```

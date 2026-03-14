@@ -1,80 +1,411 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get up and running with Windows-MCP in minutes
 ---
 
-## Get started in three steps
+Get Windows-MCP running on your system and start automating Windows tasks with AI agents in under 5 minutes.
 
-Get your documentation site running locally and make your first customization.
+## What is Windows-MCP?
 
-### Step 1: Set up your local environment
+Windows-MCP is a Model Context Protocol (MCP) server that bridges AI agents with the Windows operating system. It provides 15 powerful tools for desktop automation:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+- **App**: Launch applications, resize windows, switch focus
+- **Snapshot**: Capture screenshots and inspect UI elements
+- **Click/Type/Scroll/Move**: Mouse and keyboard control
+- **PowerShell**: Execute system commands
+- **FileSystem**: Manage files and directories
+- **Clipboard/Process/Notification/Registry**: System operations
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+Windows-MCP works with **any LLM** and doesn't require computer vision models. It uses Windows UI Automation for precise element detection.
 </Note>
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- **Windows 7, 8, 8.1, 10, or 11**
+- **Python 3.13+** ([Download Python](https://www.python.org/downloads/))
+- **uv package manager** (installed automatically with `uvx`, or install via `pip install uv`)
+- **Claude Desktop** or another MCP client ([Download Claude Desktop](https://claude.ai/download))
+
+## Quick Installation
+
+<Steps>
+  <Step title="Install with uvx (Recommended)">
+    The fastest way to get started is using `uvx`, which downloads and runs Windows-MCP directly from PyPI:
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "windows-mcp": {
+          "command": "uvx",
+          "args": [
+            "windows-mcp"
+          ]
+        }
+      }
+    }
+    ```
+
+    <Note>
+    On first run, installation may take 1-2 minutes to install dependencies. If the server times out, simply restart Claude Desktop.
+    </Note>
+  </Step>
+
+  <Step title="Configure Claude Desktop">
+    The configuration file location depends on your Claude Desktop installation:
+
+    **Standard Installation:**
+    ```
+    %APPDATA%\Claude\claude_desktop_config.json
+    ```
+
+    **Windows Store (MSIX) Version:**
+    ```
+    %LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json
+    ```
+
+    <Warning>
+    The Windows Store version requires the **full absolute path** to `uv.exe` because Electron apps don't inherit PATH. Find your path with `where uv` in a terminal (typically `%USERPROFILE%\.local\bin\uv.exe`).
+    </Warning>
+  </Step>
+
+  <Step title="Restart Claude Desktop">
+    Close and reopen Claude Desktop to load the MCP server.
+  </Step>
+
+  <Step title="Verify Installation">
+    You should see the Windows-MCP tools available in Claude Desktop. Look for the 🔨 hammer icon indicating available MCP tools.
+  </Step>
+</Steps>
+
+## Your First Automation
+
+Now that Windows-MCP is installed, let's try a simple automation task:
+
+### Example 1: Take a Screenshot and Open Notepad
+
+<CodeGroup>
+```text Prompt to Claude
+Take a snapshot of my desktop, then open Notepad and type "Hello from Windows-MCP!"
+```
+
+```json What happens behind the scenes
+// Claude calls these tools:
+1. Snapshot(use_vision=True)
+   // Returns: screenshot + interactive elements with coordinates
+
+2. App(mode='launch', name='Notepad')
+   // Opens Notepad application
+
+3. Wait(duration=2)
+   // Waits for Notepad to fully load
+
+4. Snapshot(use_vision=False)
+   // Gets current UI state to find text area
+
+5. Type(text='Hello from Windows-MCP!', label=<text_area_id>)
+   // Types the message in the text area
+```
+</CodeGroup>
+
+### Example 2: List Running Processes
+
+<CodeGroup>
+```text Prompt to Claude
+Show me the top 10 processes by memory usage
+```
+
+```python Equivalent Tool Call
+# Claude calls:
+Process(
+    mode='list',
+    sort_by='memory',
+    limit=10
+)
+
+# Returns:
+# PID      Name              Memory (MB)    CPU %
+# 12345    chrome.exe        1024.5         5.2
+# 67890    Code.exe          856.3          3.1
+# ...
+```
+</CodeGroup>
+
+### Example 3: Web Scraping from Browser
+
+<CodeGroup>
+```text Prompt to Claude
+Open Chrome, navigate to github.com/CursorTouch/Windows-MCP, and tell me about the repository
+```
+
+```python Tool Sequence
+# 1. Launch browser
+App(mode='launch', name='Chrome')
+
+# 2. Wait for load
+Wait(duration=3)
+
+# 3. Type URL in address bar
+Snapshot()  # Find address bar
+Click(label=<address_bar_id>)
+Type(text='github.com/CursorTouch/Windows-MCP', press_enter=True)
+
+# 4. Scrape content from active tab
+Scrape(url='github.com/CursorTouch/Windows-MCP', use_dom=True)
+# use_dom=True extracts from browser's DOM (web content only)
+```
+</CodeGroup>
+
+## Key Concepts
+
+### The Snapshot Tool
+
+The `Snapshot` tool is your window into the desktop state. **Always call it first** before interacting with UI elements:
+
+```python
+Snapshot(
+    use_vision=True,        # Include screenshot (returns PNG image)
+    use_annotation=True,    # Draw bounding boxes on UI elements
+    use_dom=False,          # Set to True for browser content only
+    use_ui_tree=True,       # Extract interactive elements
+    display=[0]             # Limit to specific monitor (optional)
+)
+```
+
+**Returns:**
+- Cursor position
+- Focused window and all open windows
+- Interactive elements (buttons, text fields, links) with coordinates
+- Scrollable areas
+- Screenshot (if `use_vision=True`)
+
+### DOM Mode for Browser Automation
+
+When working with web browsers, set `use_dom=True` to extract only web page content (filtering out browser UI):
+
+```python
+# Regular mode: Returns browser UI + web content
+Snapshot(use_vision=True)
+
+# DOM mode: Returns only web page content
+Snapshot(use_vision=True, use_dom=True)
+```
+
+### Coordinate-Based vs Label-Based Interaction
+
+Most interaction tools support two ways to target elements:
+
+<CodeGroup>
+```python Coordinate-Based
+# Click at specific screen coordinates
+Click(loc=[1024, 768], button='left', clicks=1)
+
+# Type at coordinates
+Type(loc=[500, 300], text='Hello', clear=True)
+```
+
+```python Label-Based (Recommended)
+# First, call Snapshot to get UI elements
+Snapshot()
+
+# Then reference elements by their label ID
+Click(label=42, button='left')
+Type(label=42, text='Hello', clear=True)
+Scroll(label=42, direction='down', wheel_times=3)
+```
+</CodeGroup>
+
+<Note>
+Label-based interaction is more reliable because it automatically handles UI changes and element repositioning.
+</Note>
+
+## Common Workflows
+
+### File Management
+
+```python
+# Read a file from Desktop
+FileSystem(mode='read', path='notes.txt')
+
+# Write content to file
+FileSystem(
+    mode='write',
+    path='output.txt',
+    content='Generated report',
+    append=False
+)
+
+# List directory contents
+FileSystem(mode='list', path='C:\\Users\\Documents')
+
+# Search for files
+FileSystem(
+    mode='search',
+    path='C:\\Projects',
+    pattern='*.py',
+    recursive=True
+)
+```
+
+<Note>
+Relative paths are resolved from the user's Desktop folder. Use absolute paths for other locations.
+</Note>
+
+### Window Management
+
+```python
+# Launch an application
+App(mode='launch', name='Calculator')
+
+# Resize active window
+App(
+    mode='resize',
+    window_loc=[100, 100],    # Top-left position
+    window_size=[800, 600]    # Width x Height
+)
+
+# Switch to specific window
+App(mode='switch', name='Visual Studio Code')
+```
+
+### System Commands
+
+```python
+# Execute PowerShell command
+PowerShell(
+    command='Get-Process | Where-Object {$_.WorkingSet -gt 100MB}',
+    timeout=30
+)
+
+# File system operations
+PowerShell(command='Get-ChildItem C:\\Users -Recurse')
+
+# Network requests
+PowerShell(command='Invoke-WebRequest -Uri https://api.github.com/users/octocat')
+```
+
+## Configuration Options
+
+### Disabling Telemetry
+
+Windows-MCP collects anonymized usage data (tool names and errors only, no arguments or outputs). To disable:
+
+```json claude_desktop_config.json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "uvx",
+      "args": ["windows-mcp"],
+      "env": {
+        "ANONYMIZED_TELEMETRY": "false"
+      }
+    }
+  }
+}
+```
+
+### Network Transport Options
+
+By default, Windows-MCP uses `stdio` transport for direct MCP client connections. For network access:
+
+<CodeGroup>
+```bash Server-Sent Events (SSE)
+uvx windows-mcp --transport sse --host localhost --port 8000
+```
+
+```bash Streamable HTTP (Recommended for production)
+uvx windows-mcp --transport streamable-http --host localhost --port 8000
+```
+
+```bash Standard (stdio)
+uvx windows-mcp
+# Default transport for Claude Desktop and other MCP clients
+```
+</CodeGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Server times out on first run">
+    This is normal! Dependencies are being installed. Simply restart Claude Desktop and the server will start immediately.
+  </Accordion>
+
+  <Accordion title="'spawn ENOENT' error (Windows Store Claude Desktop)">
+    The MSIX-packaged Claude Desktop doesn't inherit PATH. Use the full absolute path to `uv.exe`:
+
+    ```json
+    {
+      "mcpServers": {
+        "windows-mcp": {
+          "command": "C:\\Users\\<YourUsername>\\.local\\bin\\uv.exe",
+          "args": ["run", "windows-mcp"]
+        }
+      }
+    }
+    ```
+
+    Run `where uv` in PowerShell to find the exact path.
+  </Accordion>
+
+  <Accordion title="App-Tool doesn't work with non-English Windows">
+    The `App` tool is optimized for English Windows. If you're using another language, you may need to disable it or use `PowerShell` tool for app launching:
+
+    ```python
+    PowerShell(command='Start-Process notepad')
+    ```
+  </Accordion>
+
+  <Accordion title="Click/Type coordinates seem off">
+    Windows-MCP uses the Windows UI Automation coordinate space, which automatically handles DPI scaling. If you're experiencing issues:
+
+    1. Call `Snapshot(use_vision=True, use_annotation=True)` to verify element positions
+    2. Use label-based interaction instead of manual coordinates
+    3. Check for multiple monitors (use `display=[0]` to limit to primary monitor)
+  </Accordion>
+</AccordionGroup>
+
+## Security Considerations
+
+<Warning>
+**Windows-MCP has full system access** and can perform irreversible operations. It should only be used in controlled environments.
+</Warning>
+
+### Recommended Deployment
+
+- **Development**: Use in a Windows VM or Windows Sandbox
+- **Production**: Deploy in isolated environments with limited network access
+- **Credentials**: Never commit API keys or credentials to version control
+- **PowerShell Tool**: Be cautious with arbitrary command execution
+
+For detailed security guidelines, see the [Security Policy](https://github.com/CursorTouch/Windows-MCP/blob/main/SECURITY.md).
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation Guide" icon="download" href="/installation">
+    Detailed installation instructions for all platforms and MCP clients
+  </Card>
+  <Card title="Tool Reference" icon="wrench" href="/tools">
+    Complete documentation for all 15 Windows-MCP tools
+  </Card>
+  <Card title="Guides" icon="code" href="/guides/desktop-automation">
+    Real-world automation examples and workflows
+  </Card>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/CursorTouch/Windows-MCP">
+    Source code, issues, and community discussions
+  </Card>
+</CardGroup>
+
+## Community
+
+Join the Windows-MCP community:
+
+- **Discord**: [Join our server](https://discord.com/invite/Aue9Yj2VzS) for help and discussions
+- **Twitter/X**: Follow [@CursorTouch](https://x.com/CursorTouch) for updates
+- **GitHub**: [Report issues](https://github.com/CursorTouch/Windows-MCP/issues) and contribute
+
+---
+
+With over **2M+ users** on Claude Desktop Extensions, Windows-MCP is the most popular Windows automation tool for AI agents. Start building your automations today!

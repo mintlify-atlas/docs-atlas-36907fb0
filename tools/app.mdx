@@ -1,0 +1,125 @@
+---
+title: App
+description: Open/start/launch applications and manage windows
+---
+
+The App tool provides three modes for managing Windows applications and windows: launching applications, resizing/positioning windows, and switching focus between windows.
+
+## Parameters
+
+<ParamField path="mode" type="string" required>
+  Operation mode. One of:
+  - `launch`: Opens the specified application
+  - `resize`: Adjusts the size/position of a window
+  - `switch`: Brings a specific window into focus
+  
+  Default: `launch`
+</ParamField>
+
+<ParamField path="name" type="string">
+  Application or window name.
+  - For `launch` mode: Name of the application to open (e.g., "notepad", "chrome")
+  - For `resize` mode: Name of the window to resize (optional; resizes active window if omitted)
+  - For `switch` mode: Name of the window to bring into focus
+</ParamField>
+
+<ParamField path="window_loc" type="array">
+  Window position as `[x, y]` coordinates. Used only in `resize` mode.
+</ParamField>
+
+<ParamField path="window_size" type="array">
+  Window dimensions as `[width, height]`. Used only in `resize` mode.
+</ParamField>
+
+## Mode Details
+
+### Launch Mode
+
+Opens or starts the specified application.
+
+```python
+# Launch Notepad
+app_tool(mode="launch", name="notepad")
+
+# Launch Chrome browser
+app_tool(mode="launch", name="chrome")
+```
+
+### Resize Mode
+
+Adjusts the size and/or position of a window. If `name` is not provided, resizes the currently active window.
+
+```python
+# Resize active window to 800x600
+app_tool(mode="resize", window_size=[800, 600])
+
+# Move and resize a specific window
+app_tool(
+    mode="resize",
+    name="Notepad",
+    window_loc=[100, 100],
+    window_size=[800, 600]
+)
+```
+
+### Switch Mode
+
+Brings a specific window into focus (foreground).
+
+```python
+# Switch focus to Chrome window
+app_tool(mode="switch", name="Chrome")
+```
+
+## Usage Examples
+
+### Opening an Application
+
+```python
+# Open Calculator
+result = app_tool(mode="launch", name="calc")
+
+# Open File Explorer
+result = app_tool(mode="launch", name="explorer")
+```
+
+### Managing Window Layout
+
+```python
+# Position browser window on left half of screen
+app_tool(
+    mode="resize",
+    name="Chrome",
+    window_loc=[0, 0],
+    window_size=[960, 1080]
+)
+
+# Position editor window on right half
+app_tool(
+    mode="resize",
+    name="Visual Studio Code",
+    window_loc=[960, 0],
+    window_size=[960, 1080]
+)
+```
+
+### Switching Between Applications
+
+```python
+# Switch to email client
+app_tool(mode="switch", name="Outlook")
+
+# Switch back to browser
+app_tool(mode="switch", name="Firefox")
+```
+
+## Keywords
+
+open, start, launch, program, application, window, foreground, focus, resize
+
+## Tool Annotations
+
+- **Read-only**: No
+- **Destructive**: Yes
+- **Idempotent**: No
+- **Open-world**: No

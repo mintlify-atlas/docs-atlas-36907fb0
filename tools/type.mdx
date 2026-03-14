@@ -1,0 +1,162 @@
+---
+title: Type
+description: Type text into input fields at coordinates or on labeled UI elements
+---
+
+The Type tool enters text at specified screen coordinates or into UI elements identified by their label from a Snapshot. It supports text clearing, caret positioning, and automatic form submission.
+
+## Parameters
+
+<ParamField path="text" type="string" required>
+  The text to type into the target location. This can be any string including special characters, multi-line text, and Unicode.
+</ParamField>
+
+<ParamField path="loc" type="array" optional>
+  Coordinates `[x, y]` where to type. Must be a list of exactly 2 integers representing screen coordinates. Either `loc` or `label` must be provided.
+</ParamField>
+
+<ParamField path="label" type="integer" optional>
+  UI element label/id from a Snapshot call. The tool will automatically resolve the element's coordinates. Either `loc` or `label` must be provided.
+</ParamField>
+
+<ParamField path="clear" type="boolean" default="false">
+  Clear existing text in the field before typing. Set to `true` to replace content, `false` to append.
+</ParamField>
+
+<ParamField path="caret_position" type="string" default="idle">
+  Where to position the text cursor before typing:
+  - `idle`: Don't move the cursor (type at current position)
+  - `start`: Move cursor to the beginning of the field
+  - `end`: Move cursor to the end of the field
+</ParamField>
+
+<ParamField path="press_enter" type="boolean" default="false">
+  Press Enter after typing the text. Useful for submitting forms or executing commands.
+</ParamField>
+
+## Response
+
+Returns a confirmation message indicating the text typed and coordinates:
+
+```
+Typed Hello World at (450,320).
+```
+
+## Usage Examples
+
+### Type at Coordinates
+
+Type text at specific screen coordinates:
+
+```json
+{
+  "text": "Hello World",
+  "loc": [450, 320]
+}
+```
+
+### Type by Label
+
+Type into a UI element using its label from Snapshot:
+
+```json
+{
+  "text": "user@example.com",
+  "label": 25
+}
+```
+
+### Replace Existing Text
+
+Clear the field before typing new text:
+
+```json
+{
+  "text": "New content",
+  "label": 30,
+  "clear": true
+}
+```
+
+### Submit Form After Typing
+
+Type text and press Enter to submit:
+
+```json
+{
+  "text": "search query",
+  "label": 12,
+  "press_enter": true
+}
+```
+
+### Append to Existing Text
+
+Add text at the end of existing content:
+
+```json
+{
+  "text": " - additional note",
+  "label": 18,
+  "caret_position": "end"
+}
+```
+
+### Insert at Beginning
+
+Insert text at the start of existing content:
+
+```json
+{
+  "text": "Important: ",
+  "label": 22,
+  "caret_position": "start"
+}
+```
+
+### Multi-line Text
+
+Type multi-line content:
+
+```json
+{
+  "text": "Line 1\nLine 2\nLine 3",
+  "label": 35,
+  "clear": true
+}
+```
+
+### Search and Execute
+
+Combine clear, type, and submit for search operations:
+
+```json
+{
+  "text": "Windows automation",
+  "label": 8,
+  "clear": true,
+  "press_enter": true
+}
+```
+
+<Note>
+  When using the `label` parameter, you must call the Snapshot tool first to populate the desktop state with UI element labels. The label corresponds to the element IDs returned by Snapshot.
+</Note>
+
+<Tip>
+  Use `clear=true` when you want to replace existing text completely. This is more reliable than manually selecting all text with keyboard shortcuts.
+</Tip>
+
+<Tip>
+  Set `press_enter=true` for search boxes and command prompts where Enter triggers the action. This is more efficient than calling Type followed by a separate Shortcut tool call.
+</Tip>
+
+## Best Practices
+
+1. **Prefer Labels**: Use element labels from Snapshot rather than hardcoded coordinates
+2. **Call Snapshot First**: Always capture desktop state before typing by label
+3. **Clear When Replacing**: Use `clear=true` when you want to replace existing content entirely
+4. **Caret Positioning**: Use `caret_position` to control where text is inserted relative to existing content
+5. **Form Submission**: Use `press_enter=true` for search boxes and forms that submit on Enter
+6. **Wait After Typing**: Consider using the Wait tool after typing if the application needs time to process input
+7. **Special Characters**: The tool handles special characters and Unicode correctly - no need for special escaping

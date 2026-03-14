@@ -1,0 +1,274 @@
+---
+title: Security Best Practices
+description: Guidelines for secure Windows-MCP configuration and operation
+---
+
+## Run with Least Privilege
+
+<Warning>
+  Always run Windows-MCP with the minimum permissions necessary for your use case.
+</Warning>
+
+### Recommended Account Configuration
+
+- **Use a standard user account**, not an administrator account, when possible
+- Avoid running Windows-MCP with elevated privileges unless absolutely necessary
+- Consider creating a **dedicated user account** specifically for automation tasks
+
+### Creating a Restricted User Account
+
+1. Create a new Windows user account with standard (non-admin) privileges
+2. Grant only the minimum file system and application permissions needed
+3. Configure the MCP server to run under this account
+4. Test thoroughly to ensure required operations work with restricted permissions
+
+## Trusted LLM Clients Only
+
+<Note>
+  Only connect Windows-MCP to trusted MCP clients from reputable sources.
+</Note>
+
+### Client Verification Checklist
+
+- Only connect to **trusted MCP clients** (e.g., Claude Desktop, verified applications)
+- Be cautious when using with third-party or experimental LLM applications
+- Review the client application's security practices before integration
+- Verify the client source code if available
+
+## Monitor Tool Usage
+
+Regular monitoring helps detect unexpected or malicious behavior:
+
+- **Review logs** regularly to understand what actions are being performed
+- Be especially vigilant with high-risk tools (**Shell**, **Click**, **Type**, **Drag**, **Shortcut**)
+- Set up alerts for unexpected or suspicious activity
+- Track tool execution patterns for anomalies
+
+### What to Monitor
+
+- Shell command executions
+- File system modifications
+- Application launches and closures
+- Mouse/keyboard automation sequences
+- Network activity from scraped content
+
+## Network Security
+
+<Warning>
+  Never expose the MCP server directly to the internet without proper authentication and encryption.
+</Warning>
+
+### Transport Security
+
+When using SSE or HTTP transport modes:
+
+- Use **localhost binding** (`127.0.0.1`) instead of `0.0.0.0` when possible
+- Implement **firewall rules** to restrict access to the MCP server ports
+- Ensure proper network isolation from untrusted networks
+- Use VPN or SSH tunneling for remote access if required
+
+### Network Isolation
+
+- Disconnect from production networks when running automation tasks
+- Use dedicated network segments for test environments
+- Implement network-level access controls
+- Monitor outbound connections from the MCP server
+
+## Data Protection
+
+### Screenshot Privacy
+
+<Warning>
+  The **Snapshot** tool captures screenshots that may contain sensitive information visible on your screen.
+</Warning>
+
+Protect sensitive data:
+
+- Be aware that screenshots capture **everything visible** on your desktop
+- Avoid using Windows-MCP in environments with highly sensitive data on screen
+- Consider disabling screenshot functionality by setting `use_vision=False` when handling confidential information
+- Review what's visible on screen before allowing snapshot operations
+
+### Web Scraping Risks
+
+- The **Scrape** tool may fetch content from untrusted websites
+- Web scraping may expose browsing activity to target websites
+- Scraped content could contain malicious code or tracking elements
+- Validate and sanitize any scraped content before processing
+
+### Local Data Processing
+
+<Note>
+  Windows-MCP processes all commands locally on your machine. Screenshots and state captures remain on your local system.
+</Note>
+
+## Telemetry and Privacy
+
+Windows-MCP collects anonymous usage data to help improve the server.
+
+### What is Collected
+
+- Tool execution status (success/failure)
+- Execution duration
+- Tool name
+- Client name and version (e.g., Claude Desktop)
+- Anonymized session IDs (random UUID)
+
+### What is NOT Collected
+
+<Note>
+  Windows-MCP does **NOT** collect:
+  - Tool arguments (text typed, coordinates, file paths, etc.)
+  - Tool outputs (screenshots, command results, page content, etc.)
+  - Personal information (IP addresses, user identifiers)
+</Note>
+
+### Disabling Telemetry
+
+Telemetry is enabled by default but can be disabled:
+
+```json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "uvx",
+      "args": ["windows-mcp"],
+      "env": {
+        "ANONYMIZED_TELEMETRY": "false"
+      }
+    }
+  }
+}
+```
+
+Set the `ANONYMIZED_TELEMETRY` environment variable to `false` in your MCP server configuration.
+
+## Code Review and Updates
+
+### Before Deployment
+
+- **Review the source code** before deployment in production environments
+- Audit any custom extensions or modifications
+- Verify dependencies are from trusted sources
+- Check for known vulnerabilities in dependencies
+
+### Staying Current
+
+- Keep dependencies **up to date** to patch known vulnerabilities
+- Monitor security advisories for Windows-MCP and its dependencies
+- Subscribe to project notifications for security updates
+- Test updates in a safe environment before production deployment
+
+### Key Dependencies
+
+Windows-MCP relies on these third-party libraries:
+
+- **PyAutoGUI**: Mouse and keyboard automation
+- **UIAutomation**: Windows UI interaction
+- **FastMCP**: MCP server framework
+- **httpx**: HTTP client for web scraping
+
+## Backup and Recovery
+
+<Warning>
+  Always maintain backups before using automation tools that can modify your system.
+</Warning>
+
+### Backup Strategy
+
+1. **Maintain regular backups** before using automation tools
+2. **Verify backups** are complete and restorable
+3. **Test automation workflows** in a safe environment first
+4. **Have a recovery plan** in case of unintended system changes
+
+### Testing First
+
+- Test all workflows in a VM or sandbox before production use
+- Verify expected behavior with non-critical data
+- Document tested workflows and their outcomes
+- Establish rollback procedures for each workflow
+
+## Compliance and Auditing
+
+### Logging
+
+<Note>
+  Windows-MCP does not implement comprehensive audit logging by default.
+</Note>
+
+For compliance-sensitive environments, consider:
+
+- Implementing custom logging middleware
+- Using Windows Event Logging for system-level auditing
+- Monitoring file system and registry changes
+- Maintaining detailed operation logs with timestamps
+
+### Regulatory Compliance
+
+Before deploying in regulated environments:
+
+- Consult with compliance officers
+- Document security controls and procedures
+- Implement required audit trails
+- Ensure data handling meets regulatory requirements (HIPAA, PCI-DSS, etc.)
+
+## Impact Limitation Strategies
+
+If you must use Windows-MCP on a regular system:
+
+1. **Create a Dedicated User Account**: Run the MCP server under a restricted user account with minimal permissions
+2. **Regular Backups**: Maintain frequent, verified backups of all important data
+3. **Network Isolation**: Disconnect from production networks or use firewall rules
+4. **Supervised Operation**: Always monitor the agent's actions in real-time
+5. **Disable High-Risk Tools**: Remove or restrict access to Shell and other destructive tools
+6. **Test First**: Thoroughly test workflows in a safe environment before production use
+
+## Additional Configuration Options
+
+### Environment Variables
+
+Key environment variables for security configuration:
+
+- `ANONYMIZED_TELEMETRY`: Set to `false` to disable telemetry
+- `MODE`: Configure operational mode if supported
+
+### Disabling High-Risk Tools
+
+Consider modifying the server configuration to disable destructive tools:
+
+- Remove Shell tool registration for environments that don't need PowerShell access
+- Restrict Click and Type tools to specific applications
+- Implement custom validation before executing high-risk operations
+
+## Reporting Security Issues
+
+<Warning>
+  **DO NOT** open a public GitHub issue for security vulnerabilities.
+</Warning>
+
+### How to Report
+
+Report security issues via:
+
+1. **Email**: Send details to [jeogeoalukka@gmail.com](mailto:jeogeoalukka@gmail.com)
+2. **GitHub Security Advisories**: Use the [GitHub Security Advisory](https://github.com/CursorTouch/Windows-MCP/security/advisories) feature (preferred)
+
+### What to Include
+
+- Description of the vulnerability
+- Steps to reproduce the issue
+- Potential impact assessment
+- Suggested fix (if available)
+- Your contact information for follow-up
+
+### Response Timeline
+
+- **Initial Response**: Within 48 hours
+- **Status Update**: Within 7 days
+- **Fix Timeline**: Depends on severity (critical issues prioritized)
+
+## Next Steps
+
+- Review [Safe Deployment](/security/deployment) strategies
+- Understand [Security Overview](/security/overview) for threat context
+- Set up monitoring and logging for your deployment

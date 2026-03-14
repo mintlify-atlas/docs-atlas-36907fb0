@@ -1,0 +1,137 @@
+---
+title: Security Overview
+description: Critical security considerations for Windows-MCP deployment
+---
+
+## Introduction
+
+Windows-MCP provides powerful automation capabilities that interact directly with your Windows operating system. Understanding the security implications is **essential** before deployment.
+
+<Warning>
+  **Windows-MCP is NOT a sandboxed or isolated tool.** It interacts directly with your actual Windows operating system on behalf of the connected LLM agent.
+</Warning>
+
+## Direct Operating System Interaction
+
+Windows-MCP operates without any intermediate safety layer:
+
+- **Real System Actions**: Every tool call executes real actions on your physical or virtual Windows machine
+- **No Safety Net**: There is no intermediate layer, simulation, or preview mode
+- **User Permissions**: The MCP server operates with the full permissions of the user running it
+
+### System Access Level
+
+The security implications are significant:
+
+- **Full System Access**: The MCP server can perform any action that the current user can perform
+- **No Sandboxing**: Tools execute directly on your Windows system without isolation
+- **Persistent Changes**: Actions taken by the MCP server can permanently modify your system state
+
+## Irreversible and Destructive Changes
+
+<Warning>
+  Many operations performed by Windows-MCP **CANNOT BE UNDONE**.
+</Warning>
+
+Examples of irreversible operations:
+
+- **File Deletions**: Files deleted through PowerShell or UI interactions may be permanently lost
+- **Data Overwrites**: Text typed with `clear=True` replaces existing content without recovery options
+- **System Modifications**: PowerShell commands can modify registry, services, and system configurations
+- **Application Actions**: Clicking "Delete", "Yes", or "Confirm" buttons has real consequences
+- **No Undo/Rollback**: Unlike text editors or IDEs, most Windows operations don't have an undo feature
+
+## Where NOT to Deploy
+
+<Warning>
+  **DO NOT** deploy Windows-MCP on systems where you cannot tolerate the risk of:
+  
+  - Accidental data loss or corruption
+  - Unintended system configuration changes
+  - Exposure of sensitive information through screenshots
+  - Execution of malicious commands if the LLM is compromised
+  - Compliance violations in regulated environments
+</Warning>
+
+### Prohibited Deployment Targets
+
+**NEVER deploy Windows-MCP on:**
+
+- Production servers or workstations
+- Systems containing irreplaceable data
+- Machines with access to sensitive databases or networks
+- Compliance-regulated environments (healthcare, finance, government)
+- Shared systems or multi-user environments without explicit consent
+- Any system you don't fully control and can't afford to lose
+
+## Tool-Specific Security Implications
+
+Based on tool annotations, each tool has a different security profile:
+
+### High-Risk Tools (Potentially Destructive)
+
+These tools can make permanent changes to your system:
+
+| Tool | Risk Level | Security Implications |
+|------|------------|----------------------|
+| **Shell** | Critical | Can execute arbitrary PowerShell commands, including system modifications, file deletions, and network operations |
+| **Click** | High | Can trigger destructive UI actions (delete confirmations, system dialogs) |
+| **Type** | High | Can overwrite text, potentially destroying data when `clear=True` |
+| **Drag** | High | Can move/reorganize files, potentially overwriting existing files |
+| **Shortcut** | High | Can execute destructive keyboard shortcuts (Ctrl+D delete, Alt+F4 close) |
+
+### Medium-Risk Tools (Modifying but Non-Destructive)
+
+These tools modify system state but are generally safe:
+
+| Tool | Risk Level | Security Implications |
+|------|------------|----------------------|
+| **App** | Medium | Launches/manages applications but doesn't modify data |
+| **Scroll** | Low | Only changes viewport position |
+| **Move** | Low | Only positions mouse cursor |
+
+### Low-Risk Tools (Read-Only)
+
+These tools only read information without making changes:
+
+| Tool | Risk Level | Security Implications |
+|------|------------|----------------------|
+| **Snapshot** | Safe | Only captures desktop state and screenshots |
+| **Wait** | Safe | Only pauses execution |
+| **Scrape** | Safe* | Fetches web content (*may expose browsing activity) |
+
+<Note>
+  All tools include security-relevant annotations:
+  - `readOnlyHint`: true if the tool only reads data
+  - `destructiveHint`: true if the tool may perform destructive updates
+  - `idempotentHint`: true if repeated calls have no additional effect
+  - `openWorldHint`: true if the tool interacts with external entities
+</Note>
+
+## Disclaimer
+
+<Warning>
+  **USE AT YOUR OWN RISK**
+  
+  Windows-MCP is provided "as is" without warranty of any kind. The maintainers are not responsible for:
+  
+  - Data loss or system damage caused by tool usage
+  - Security breaches resulting from improper configuration
+  - Actions performed by LLM agents using this MCP server
+  - Compliance violations in regulated environments
+</Warning>
+
+### User Responsibilities
+
+Users are solely responsible for:
+
+- Ensuring appropriate use in their environment
+- Implementing necessary security controls
+- Complying with applicable laws and regulations
+- Monitoring and auditing tool usage
+
+## Next Steps
+
+- Review [Best Practices](/security/best-practices) for secure configuration
+- Learn about [Safe Deployment](/security/deployment) strategies
+- Understand vulnerability reporting procedures

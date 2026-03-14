@@ -1,0 +1,702 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for Windows-MCP
+---
+
+## Installation Issues
+
+### Server Timeout on First Run
+
+**Problem**: MCP server times out when first installed in Claude Desktop or other clients.
+
+**Cause**: First run installs dependencies from `pyproject.toml`, which takes 1-2 minutes.
+
+**Solution**:
+1. Wait for the initial installation to complete
+2. Restart the MCP client (Claude Desktop, etc.)
+3. Server should start normally on subsequent runs
+
+### `spawn ENOENT` Error (Claude Desktop MSIX)
+
+**Problem**: Claude Desktop MSIX version fails with `spawn ENOENT` when launching Windows-MCP.
+
+**Cause**: Electron apps don't inherit system PATH, so `uv` or `uvx` cannot be found.
+
+**Solution**: Use absolute path to `uv.exe` in config:
+
+```json
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "C:\\Users\\<user>\\.local\\bin\\uv.exe",
+      "args": [
+        "--directory",
+        "C:\\Users\\<user>\\AppData\\Local\\Packages\\Claude_pzs8sxrjxfjjc\\LocalCache\\Roaming\\Claude\\Claude Extensions\\ant.dir.cursortouch.windows-mcp",
+        "run",
+        "windows-mcp"
+      ]
+    }
+  }
+}
+```
+
+To find `uv.exe` location:
+```powershell
+where uv
+# Common: C:\Users\<user>\.local\bin\uv.exe
+```
+
+### UTF-8 BOM Breaks Config
+
+**Problem**: `claude_desktop_config.json` not recognized after editing.
+
+**Cause**: PowerShell `Set-Content` adds UTF-8 BOM (Byte Order Mark) that breaks JSON parser.
+
+**Solution**: Save config as **UTF-8 without BOM**:
+- Use Notepad: Save As → Encoding: "UTF-8" (not "UTF-8 with BOM")
+- Use VS Code: Bottom right → "UTF-8 with BOM" → "UTF-8"
+- Use PowerShell properly:
+  ```powershell
+  $json | Out-File -Encoding UTF8NoBOM config.json
+  ```
+
+### Wrong Config File Location (MSIX)
+
+**Problem**: Editing config file has no effect.
+
+**Cause**: MSIX-packaged Claude Desktop virtualizes `%APPDATA%`, so config is in a different location.
+
+**Actual Location**:
+```
+%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json
+```
+
+Not:
+```
+%APPDATA%\Claude\claude_desktop_config.json
+```
+
+**Solution**: Open correct location:
+```powershell
+notepad $env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json
+```
+
+### App-Tool Fails on Non-English Windows
+
+**Problem**: App tool doesn't work correctly on Windows with non-English language.
+
+**Cause**: App detection relies on English UI automation tree.
+
+**Solution**:
+- Set Windows display language to English (preferred)
+- Or disable App-Tool in MCP server configuration
+- Other tools work fine with any language
+
+## Desktop Automation Issues
+
+### "Desktop state is empty. Please call Snapshot first."
+
+**Problem**: Click/Type/Scroll with `label` parameter fails.
+
+**Cause**: Labels are only available after taking a Snapshot.
+
+**Solution**: Always call Snapshot before using labels:
+
+```javascript
+// GOOD
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_vision: false }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 0 }  // Works!
+});
+
+// BAD
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 0 }  // Error: Desktop state is empty
+});
+```
+
+### "Label X out of range"
+
+**Problem**: Label index doesn't exist.
+
+**Cause**: UI changed between Snapshot and action, or wrong label number used.
+
+**Solution**:
+1. Take a fresh Snapshot
+2. Verify label exists in output
+3. Use that label immediately
+
+```javascript
+// Snapshot shows:
+// [0] Button "Save"
+// [1] Button "Cancel"
+// [2] Edit "Text field"
+
+// GOOD
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 1 }  // Clicks "Cancel"
+});
+
+// BAD
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 5 }  // Error: Only 0-2 exist
+});
+```
+
+### Elements Not Detected
+
+**Problem**: Expected buttons/fields don't appear in Snapshot.
+
+**Common Causes**:
+
+1. **Window not active**: Switch to window first
+   ```javascript
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "App",
+     arguments: { mode: "switch", name: "Notepad" }
+   });
+   ```
+
+2. **UI not loaded**: Wait before taking Snapshot
+   ```javascript
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Wait",
+     arguments: { duration: 2 }
+   });
+   ```
+
+3. **Element hidden/minimized**: Restore window
+   ```javascript
+   // Switch automatically restores minimized windows
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "App",
+     arguments: { mode: "switch", name: "Calculator" }
+   });
+   ```
+
+4. **Custom controls**: Some apps use non-standard UI controls that aren't detected by UIAutomation
+   - **Workaround**: Use coordinates instead of labels
+   - Or use Vision mode to visually identify elements
+
+### Clicks Don't Work
+
+**Problem**: Click executes but nothing happens.
+
+**Possible Causes**:
+
+1. **Wrong coordinates**: UI moved since Snapshot
+   ```javascript
+   // GOOD: Use label (resilient to movement)
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Click",
+     arguments: { label: 0 }
+   });
+   
+   // RISKY: Hardcoded coordinates
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Click",
+     arguments: { loc: [500, 300] }  // May be wrong
+   });
+   ```
+
+2. **Window not focused**: Bring window to foreground
+   ```javascript
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "App",
+     arguments: { mode: "switch", name: "Target Window" }
+   });
+   ```
+
+3. **Element disabled**: Check if button is clickable
+   - Take Snapshot with `use_vision: true` to visually verify
+
+4. **Need double-click**: Some elements require double-click
+   ```javascript
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Click",
+     arguments: {
+       label: 0,
+       clicks: 2  // Double-click
+     }
+   });
+   ```
+
+### Type Tool Not Working in IDEs
+
+**Problem**: Typing code into IDE results in mangled text.
+
+**Cause**: Type tool is designed for forms/text fields, not programming. It types entire text at once with minimal delays.
+
+**Limitation**: Currently not suitable for typing code into Visual Studio Code, PyCharm, etc.
+
+**Workaround**: Use Clipboard + Paste
+```javascript
+// 1. Set clipboard content
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Clipboard",
+  arguments: {
+    mode: "set",
+    text: "def hello():\n    print('Hello world')"
+  }
+});
+
+// 2. Click in editor
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 0 }
+});
+
+// 3. Paste
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "ctrl+v" }
+});
+```
+
+### Can't Select Text in Paragraph
+
+**Problem**: Unable to select specific words within a paragraph.
+
+**Cause**: MCP relies on UIAutomation accessibility tree, which doesn't support character-level selection within paragraphs.
+
+**Status**: ⌛ Feature under development
+
+**Current Workaround**: Use whole-field operations (select all, replace)
+```javascript
+// Select all text in field
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "ctrl+a" }
+});
+```
+
+## Browser Automation Issues
+
+### "No DOM information found"
+
+**Problem**: DOM snapshot returns no web page elements.
+
+**Causes**:
+
+1. **Browser not active**:
+   ```javascript
+   // GOOD
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "App",
+     arguments: { mode: "switch", name: "Chrome" }
+   });
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Snapshot",
+     arguments: { use_dom: true }
+   });
+   
+   // BAD - browser might not be active
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Snapshot",
+     arguments: { use_dom: true }
+   });
+   ```
+
+2. **Page not loaded**: Wait for page to render
+   ```javascript
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Wait",
+     arguments: { duration: 3 }
+   });
+   ```
+
+3. **Unsupported browser**: Only Chrome, Edge, and Firefox are supported
+   - Check browser with regular Snapshot first
+
+### Scrape Tool Fails with "HTTP error"
+
+**Problem**: Scrape returns HTTP errors (403, 404, etc.)
+
+**Causes**:
+
+1. **Site blocks HTTP requests**: Use DOM scraping instead
+   ```javascript
+   // Navigate to page in browser first
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Scrape",
+     arguments: {
+       url: "https://example.com",
+       use_dom: true  // Extract from browser
+     }
+   });
+   ```
+
+2. **Authentication required**: Must be logged in
+   ```javascript
+   // 1. Log in via browser automation
+   // 2. Then scrape from authenticated session
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Scrape",
+     arguments: {
+       url: "current",
+       use_dom: true
+     }
+   });
+   ```
+
+3. **URL typo or site down**: Verify URL
+
+### Browser Elements Wrong After Scroll
+
+**Problem**: Element coordinates outdated after scrolling.
+
+**Cause**: Snapshot captures coordinates at time of capture.
+
+**Solution**: Take fresh Snapshot after scrolling
+```javascript
+// 1. Scroll
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scroll",
+  arguments: {
+    type: "vertical",
+    direction: "down",
+    wheel_times: 5
+  }
+});
+
+// 2. Wait for scroll to complete
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 1 }
+});
+
+// 3. Get updated coordinates
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+```
+
+## File Operations Issues
+
+### "File too large"
+
+**Problem**: Cannot read file larger than 10 MB.
+
+**Solution**: Use offset/limit to read in chunks
+```javascript
+// Read first 1000 lines
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "read",
+    path: "large_file.log",
+    offset: 1,
+    limit: 1000
+  }
+});
+
+// Read next 1000 lines
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "read",
+    path: "large_file.log",
+    offset: 1001,
+    limit: 1000
+  }
+});
+```
+
+Or use PowerShell for streaming:
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "PowerShell",
+  arguments: {
+    command: "Get-Content C:\\large_file.log -TotalCount 100"
+  }
+});
+```
+
+### "Permission denied"
+
+**Problem**: Cannot read/write/delete file.
+
+**Causes**:
+
+1. **File in use**: Close application using the file
+2. **Insufficient permissions**: Run MCP client as administrator
+3. **Read-only file**: Remove read-only attribute
+   ```javascript
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "PowerShell",
+     arguments: {
+       command: "Set-ItemProperty C:\\file.txt -Name IsReadOnly -Value $false"
+     }
+   });
+   ```
+
+### "Destination already exists"
+
+**Problem**: Copy/move fails because destination exists.
+
+**Solution**: Set `overwrite: true`
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "copy",
+    path: "source.txt",
+    destination: "dest.txt",
+    overwrite: true  // Replace existing file
+  }
+});
+```
+
+### "Directory is not empty"
+
+**Problem**: Cannot delete directory.
+
+**Solution**: Set `recursive: true`
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "FileSystem",
+  arguments: {
+    mode: "delete",
+    path: "C:\\temp\\folder",
+    recursive: true  // Delete all contents
+  }
+});
+```
+
+## Process Management Issues
+
+### "Access denied to kill PID X"
+
+**Problem**: Cannot terminate process.
+
+**Causes**:
+
+1. **System process**: Requires administrator privileges
+   - Run MCP client as administrator
+   - Some processes are protected and cannot be killed
+
+2. **Protected process**: Windows prevents termination
+   - Don't kill critical system processes
+
+### "No process with PID X found"
+
+**Problem**: Process terminated before kill command executed.
+
+**Solution**: List processes first to verify PID
+```javascript
+// Check if still running
+const check = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Process",
+  arguments: {
+    mode: "list",
+    name: "myapp"
+  }
+});
+
+if (!check.includes("No processes found")) {
+  // Extract PID and kill
+}
+```
+
+### Process Killed but Immediately Restarts
+
+**Problem**: Process reappears after being terminated.
+
+**Cause**: Windows service or another process is restarting it.
+
+**Solution**:
+- For services: Stop the service instead
+  ```javascript
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "PowerShell",
+    arguments: {
+      command: "Stop-Service -Name ServiceName"
+    }
+  });
+  ```
+- For startup apps: Disable in Task Manager → Startup tab
+
+## Performance Issues
+
+### Snapshot Takes Too Long
+
+**Problem**: Snapshot tool is slow (> 5 seconds).
+
+**Optimization**:
+
+1. **Disable vision when not needed**:
+   ```javascript
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Snapshot",
+     arguments: {
+       use_vision: false  // Much faster
+     }
+   });
+   ```
+
+2. **Disable UI tree for screenshot-only**:
+   ```javascript
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "Snapshot",
+     arguments: {
+       use_vision: true,
+       use_ui_tree: false  // Skip element detection
+     }
+   });
+   ```
+
+3. **Close unnecessary applications**: Fewer windows = faster tree traversal
+
+### High CPU/Memory Usage
+
+**Problem**: MCP server consuming excessive resources.
+
+**Causes**:
+
+1. **Too many Snapshots**: Taking Snapshots frequently is CPU-intensive
+   - Cache Snapshot results when possible
+   - Only Snapshot when UI might have changed
+
+2. **Memory leak**: Restart MCP server
+   - Restart MCP client (Claude Desktop, etc.)
+
+## Video Game Automation
+
+**Problem**: Trying to automate video games.
+
+**Limitation**: Windows-MCP **cannot** be used to automate video games.
+
+**Reason**: Games use DirectX/OpenGL rendering and custom input handling that bypass UIAutomation.
+
+**Alternative**: Use game-specific automation tools or APIs.
+
+## Security Issues
+
+### Running with Full System Access
+
+**Important**: Windows-MCP operates with **full system access** and no sandboxing.
+
+**Recommendations**:
+
+1. **Use in VM or Windows Sandbox** for untrusted automation
+2. **Review automation scripts** before execution
+3. **Don't commit sensitive files** (avoid accidentally using FileSystem to access .env, credentials.json, etc.)
+4. **Disable telemetry** if handling sensitive data:
+   ```json
+   {
+     "mcpServers": {
+       "windows-mcp": {
+         "env": {
+           "ANONYMIZED_TELEMETRY": "false"
+         }
+       }
+     }
+   }
+   ```
+
+See [Security Policy](https://github.com/CursorTouch/Windows-MCP/blob/main/SECURITY.md) for details.
+
+## Getting Help
+
+### Log Files
+
+Check MCP client logs:
+
+**Claude Desktop**:
+```
+%APPDATA%\Claude\logs\
+```
+
+**Other clients**: Check documentation for log location
+
+### Debugging
+
+1. **Enable verbose logging**: Check client-specific settings
+2. **Test with PowerShell tool**: Verify basic connectivity
+   ```javascript
+   await use_mcp_tool({
+     server_name: "windows-mcp",
+     tool_name: "PowerShell",
+     arguments: {
+       command: "Write-Output 'Test'"
+     }
+   });
+   ```
+3. **Verify installation**: Ensure Windows-MCP appears in client's MCP server list
+
+### Community Support
+
+- **Discord**: [Join Windows-MCP Discord](https://discord.com/invite/Aue9Yj2VzS)
+- **GitHub Issues**: [Report bugs](https://github.com/CursorTouch/Windows-MCP/issues)
+- **X/Twitter**: [@CursorTouch](https://x.com/CursorTouch)
+
+### Before Reporting Issues
+
+1. Check this troubleshooting guide
+2. Verify you're using latest version: `uvx windows-mcp`
+3. Test with minimal reproduction case
+4. Include:
+   - Windows version
+   - Python version
+   - MCP client (Claude Desktop, etc.)
+   - Error message
+   - Steps to reproduce
+
+## Known Limitations
+
+See [README Limitations](https://github.com/CursorTouch/Windows-MCP#-limitations):
+
+- ⌛ Cannot select specific text sections within paragraphs
+- ⌛ Type tool not suitable for programming in IDEs
+- Cannot automate video games
+
+## Next Steps
+
+- [Desktop Automation](/guides/desktop-automation) - Core automation patterns
+- [Browser Automation](/guides/browser-automation) - Web-specific techniques
+- [File Operations](/guides/file-operations) - File management
+- [Process Management](/guides/process-management) - Process control

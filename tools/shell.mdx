@@ -1,0 +1,137 @@
+---
+title: PowerShell
+description: Execute PowerShell commands and scripts on Windows
+---
+
+The PowerShell tool provides comprehensive system access for executing PowerShell commands, managing files and processes, and performing system-level operations. It can access web content, interact with network resources, and perform complex administrative tasks.
+
+## Parameters
+
+<ParamField path="command" type="string" required>
+  The PowerShell command or script to execute. Can be a simple command or a multi-line script.
+</ParamField>
+
+<ParamField path="timeout" type="integer" default="30">
+  Maximum execution time in seconds before the command is terminated. Default is 30 seconds.
+</ParamField>
+
+## Return Value
+
+Returns a string containing:
+- **Response**: The command output (stdout/stderr)
+- **Status Code**: Exit code (0 for success, non-zero for errors)
+
+Format:
+```
+Response: <command output>
+Status Code: <exit code>
+```
+
+## Usage Examples
+
+### File System Operations
+
+```python
+# List files in current directory
+powershell_tool(command="Get-ChildItem")
+
+# Create a new directory
+powershell_tool(command="New-Item -ItemType Directory -Path C:\\Temp\\MyFolder")
+
+# Read file contents
+powershell_tool(command="Get-Content C:\\Temp\\file.txt")
+```
+
+### Process Management
+
+```python
+# List running processes
+powershell_tool(command="Get-Process | Select-Object Name, CPU, Memory")
+
+# Stop a process
+powershell_tool(command="Stop-Process -Name notepad -Force")
+```
+
+### Network Operations
+
+```python
+# Download a file from the web
+powershell_tool(
+    command="Invoke-WebRequest -Uri 'https://example.com/file.zip' -OutFile 'C:\\Temp\\file.zip'",
+    timeout=60
+)
+
+# Test network connectivity
+powershell_tool(command="Test-NetConnection -ComputerName google.com")
+```
+
+### System Information
+
+```python
+# Get system information
+powershell_tool(command="Get-ComputerInfo")
+
+# Check disk space
+powershell_tool(command="Get-PSDrive C | Select-Object Used, Free")
+
+# Get environment variables
+powershell_tool(command="Get-ChildItem Env:")
+```
+
+### Multi-line Scripts
+
+```python
+# Execute a complex script
+script = """
+$files = Get-ChildItem -Path C:\\Temp -Filter *.log
+foreach ($file in $files) {
+    Write-Output "Processing: $($file.Name)"
+    Remove-Item $file.FullName
+}
+Write-Output "Cleanup complete"
+"""
+powershell_tool(command=script, timeout=60)
+```
+
+### Custom Timeout for Long Operations
+
+```python
+# Large file operation with extended timeout
+powershell_tool(
+    command="Compress-Archive -Path C:\\LargeFolder -DestinationPath C:\\archive.zip",
+    timeout=300  # 5 minutes
+)
+```
+
+## Error Handling
+
+If the command fails or times out, the tool returns an error message with status code 1:
+
+```python
+# Example error response
+"Error executing command: <error details>\nStatus Code: 1"
+```
+
+## Security Considerations
+
+<Warning>
+This tool provides **full system access** with no sandboxing. It can:
+- Modify or delete files and directories
+- Install or uninstall software
+- Change system settings
+- Access network resources
+- Execute arbitrary code
+
+Use with caution, especially in production environments. Consider running in a VM or Windows Sandbox.
+</Warning>
+
+## Keywords
+
+shell, run, execute, cmd, terminal, command line, script
+
+## Tool Annotations
+
+- **Read-only**: No
+- **Destructive**: Yes
+- **Idempotent**: No
+- **Open-world**: Yes

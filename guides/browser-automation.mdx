@@ -1,0 +1,820 @@
+---
+title: Browser Automation
+description: Automating web browsers using DOM mode and web scraping techniques
+---
+
+## Overview
+
+Windows-MCP provides specialized support for browser automation through **DOM mode**, which extracts web page content while filtering out browser UI elements. This enables cleaner, more efficient web automation compared to standard desktop automation.
+
+## DOM Mode
+
+### What is DOM Mode?
+
+When `use_dom=True` is enabled in the Snapshot tool, Windows-MCP:
+
+1. Detects if the active window is a browser (Chrome, Edge, Firefox)
+2. Extracts **only web page content** from the DOM
+3. Filters out browser UI (address bar, tabs, bookmarks, etc.)
+4. Returns clean, web-focused element tree
+
+### Supported Browsers
+
+- **Google Chrome**
+- **Microsoft Edge**
+- **Mozilla Firefox**
+
+<Note>
+DOM mode requires the browser window to be **active** (foreground). Switch to the browser before taking a DOM snapshot.
+</Note>
+
+## Taking a DOM Snapshot
+
+### Basic DOM Snapshot
+
+```javascript
+// Switch to browser first
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "App",
+  arguments: {
+    mode: "switch",
+    name: "Chrome"
+  }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 1 }
+});
+
+// Take DOM snapshot
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: {
+    use_dom: true,
+    use_vision: false  // Optional: add screenshot
+  }
+});
+```
+
+### DOM Snapshot Output
+
+Returns web page elements only:
+
+```
+List of Interactive Elements:
+[0] Link "Home" at (200, 150) in window "Chrome"
+[1] Button "Sign In" at (1200, 80) in window "Chrome"
+[2] Edit "Search" at (600, 100) in window "Chrome"
+[3] Link "Products" at (300, 150) in window "Chrome"
+[4] Link "About" at (400, 150) in window "Chrome"
+
+List of Scrollable Elements:
+[5] Document "Main Content" at (640, 400) - Scroll: 15% of page
+```
+
+Note: Browser UI elements (address bar, tabs, extensions) are **excluded**.
+
+### Standard vs DOM Mode Comparison
+
+```javascript
+// Standard mode - includes browser UI
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: {
+    use_dom: false  // or omit
+  }
+});
+// Returns: Address bar, tabs, bookmarks, extensions, AND page content
+
+// DOM mode - page content only
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: {
+    use_dom: true
+  }
+});
+// Returns: Only interactive web page elements
+```
+
+## Web Navigation
+
+### Opening a URL
+
+```javascript
+// 1. Switch to browser
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "App",
+  arguments: {
+    mode: "switch",
+    name: "Chrome"
+  }
+});
+
+// 2. Click address bar (use standard snapshot first)
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: false }  // Need browser UI elements
+});
+// Returns: [2] Edit "Address and search bar" at (600, 50)
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 2 }
+});
+
+// 3. Type URL
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 2,
+    text: "https://example.com",
+    clear: true,
+    press_enter: true
+  }
+});
+
+// 4. Wait for page load
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 3 }
+});
+
+// 5. Get page content with DOM mode
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+```
+
+### Navigating Links
+
+```javascript
+// 1. Get page elements
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+// Returns: [3] Link "Products" at (300, 150)
+
+// 2. Click link
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 3 }
+});
+
+// 3. Wait for navigation
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 2 }
+});
+
+// 4. Verify new page loaded
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+```
+
+## Form Filling
+
+### Login Form Example
+
+```javascript
+// 1. Load login page and get DOM
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true, use_vision: true }
+});
+// Returns:
+// [0] Edit "Username" at (500, 300)
+// [1] Edit "Password" at (500, 350)
+// [2] Button "Sign In" at (500, 420)
+
+// 2. Fill username
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 0,
+    text: "user@example.com",
+    clear: true
+  }
+});
+
+// 3. Fill password
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 1,
+    text: "SecurePass123",
+    clear: true
+  }
+});
+
+// 4. Click submit button
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 2 }
+});
+
+// 5. Wait for redirect
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 3 }
+});
+
+// 6. Verify login success
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+```
+
+### Multi-Field Forms
+
+Use `MultiEdit` to fill multiple fields efficiently:
+
+```javascript
+// Get form elements
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+// Returns:
+// [0] Edit "First Name"
+// [1] Edit "Last Name"
+// [2] Edit "Email"
+// [3] Edit "Phone"
+
+// Fill all fields at once
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "MultiEdit",
+  arguments: {
+    labels: [
+      [0, "John"],
+      [1, "Doe"],
+      [2, "john.doe@example.com"],
+      [3, "555-1234"]
+    ]
+  }
+});
+```
+
+## Scrolling Web Pages
+
+### Scroll Position Tracking
+
+DOM snapshots include scroll percentage:
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+// Returns:
+// List of Scrollable Elements:
+// [5] Document "Main Content" - Scroll: 25% of page
+```
+
+### Scrolling Down a Page
+
+```javascript
+// Scroll down at page center
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scroll",
+  arguments: {
+    label: 5,  // Scrollable document element
+    type: "vertical",
+    direction: "down",
+    wheel_times: 5
+  }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 1 }
+});
+
+// Check new scroll position
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+// Now shows: Scroll: 45% of page
+```
+
+### Scrolling to Load More Content
+
+```javascript
+let scrollPosition = 0;
+let previousPosition = -1;
+
+while (scrollPosition < 100 && scrollPosition !== previousPosition) {
+  // Scroll down
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Scroll",
+    arguments: {
+      type: "vertical",
+      direction: "down",
+      wheel_times: 3
+    }
+  });
+  
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Wait",
+    arguments: { duration: 2 }  // Wait for lazy loading
+  });
+  
+  // Get updated scroll position
+  const snapshot = await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Snapshot",
+    arguments: { use_dom: true }
+  });
+  
+  previousPosition = scrollPosition;
+  // Extract scrollPosition from snapshot
+  // [5] Document - Scroll: 67% of page
+}
+```
+
+## Web Scraping
+
+### HTTP Scraping (Default)
+
+For public pages that don't require authentication:
+
+```javascript
+// Scrape without opening browser
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scrape",
+  arguments: {
+    url: "https://example.com/article",
+    use_dom: false  // HTTP request
+  }
+});
+// Returns: Clean markdown of page content
+```
+
+### DOM Scraping
+
+For authenticated pages or when HTTP is blocked:
+
+```javascript
+// 1. Navigate to page in browser (logged in)
+// ... (use navigation steps from above)
+
+// 2. Scrape from active browser tab
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scrape",
+  arguments: {
+    url: "https://example.com/private",
+    use_dom: true  // Extract from browser DOM
+  }
+});
+// Returns: Content from the currently open browser tab
+```
+
+### Focused Scraping with Query
+
+```javascript
+// Extract specific information
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scrape",
+  arguments: {
+    url: "https://news.example.com",
+    query: "Find all article headlines and publication dates",
+    use_sampling: true  // Use LLM to extract focused content
+  }
+});
+```
+
+### Raw Content (No Processing)
+
+```javascript
+// Get unprocessed HTML/text
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scrape",
+  arguments: {
+    url: "https://api.example.com/data",
+    use_sampling: false  // Return raw content
+  }
+});
+```
+
+## Browser-Specific Features
+
+### Opening New Tabs
+
+```javascript
+// Ctrl+T to open new tab
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "ctrl+t" }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 1 }
+});
+
+// Type URL in new tab
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    text: "https://newpage.com",
+    press_enter: true
+  }
+});
+```
+
+### Switching Tabs
+
+```javascript
+// Next tab
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "ctrl+tab" }
+});
+
+// Previous tab
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "ctrl+shift+tab" }
+});
+```
+
+### Closing Tabs
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "ctrl+w" }
+});
+```
+
+### Refreshing Page
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "F5" }
+});
+
+// Or hard refresh
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "ctrl+F5" }
+});
+```
+
+### Browser DevTools
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Shortcut",
+  arguments: { shortcut: "F12" }
+});
+```
+
+## Complete Example: Product Search
+
+```javascript
+// 1. Switch to browser
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "App",
+  arguments: { mode: "switch", name: "Chrome" }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 1 }
+});
+
+// 2. Navigate to search page
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: false }  // Need address bar
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 0,  // Address bar
+    text: "https://store.example.com",
+    clear: true,
+    press_enter: true
+  }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 3 }
+});
+
+// 3. Get page content
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true, use_vision: true }
+});
+// Returns: [0] Edit "Search products" at (600, 100)
+
+// 4. Enter search query
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 0,
+    text: "wireless keyboard",
+    press_enter: true
+  }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 2 }
+});
+
+// 5. View search results
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true, use_vision: true }
+});
+// Returns product links:
+// [5] Link "Logitech K380" at (400, 300)
+// [6] Link "Microsoft Bluetooth" at (400, 450)
+// [7] Link "Keychron K2" at (400, 600)
+
+// 6. Click on first product
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Click",
+  arguments: { label: 5 }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 3 }
+});
+
+// 7. Scrape product details
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scrape",
+  arguments: {
+    url: "current",  // Current page
+    use_dom: true,
+    query: "Extract product name, price, description, and customer rating"
+  }
+});
+```
+
+## Best Practices
+
+### 1. Switch to Browser First
+
+Always ensure the browser is the active window before DOM operations:
+
+```javascript
+// GOOD
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "App",
+  arguments: { mode: "switch", name: "Chrome" }
+});
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+
+// BAD - might fail if browser not active
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+```
+
+### 2. Use DOM Mode for Web Content
+
+```javascript
+// GOOD - Clean web elements
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+
+// AVOID - Includes browser UI clutter
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: false }
+});
+```
+
+### 3. Wait for Page Loads
+
+Web pages take time to load and render:
+
+```javascript
+// After navigation
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 3 }  // Minimum 2-3 seconds
+});
+
+// After clicking buttons that trigger AJAX
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 2 }
+});
+```
+
+### 4. Verify Navigation Success
+
+Check that the page loaded before continuing:
+
+```javascript
+// Navigate
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Type",
+  arguments: {
+    label: 0,
+    text: "https://example.com",
+    press_enter: true
+  }
+});
+
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 3 }
+});
+
+// Verify
+const snapshot = await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Snapshot",
+  arguments: { use_dom: true }
+});
+
+// Check if expected elements are present
+if (!snapshot.includes("expected element")) {
+  // Page didn't load correctly
+}
+```
+
+### 5. Use HTTP Scraping When Possible
+
+```javascript
+// GOOD - Faster, no browser needed
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scrape",
+  arguments: {
+    url: "https://public-api.example.com/data",
+    use_dom: false
+  }
+});
+
+// Use DOM scraping only when necessary
+// (authentication required, JavaScript-heavy sites)
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Scrape",
+  arguments: {
+    url: "https://private.example.com/dashboard",
+    use_dom: true  // Requires logged-in browser session
+  }
+});
+```
+
+## Troubleshooting
+
+### "No DOM information found"
+
+**Problem**: DOM snapshot returns empty
+
+**Solutions**:
+1. Ensure browser window is active: `App` tool with `mode: "switch"`
+2. Wait for page to fully load before DOM snapshot
+3. Verify browser is supported (Chrome, Edge, Firefox)
+
+### Elements Missing from DOM
+
+**Problem**: Expected elements not in snapshot
+
+**Solutions**:
+1. Wait longer for dynamic content to load
+2. Scroll down to load lazy-loaded elements
+3. Check if elements are in iframes (not currently supported)
+
+### Coordinates Don't Work
+
+**Problem**: Click at coordinates fails in browser
+
+**Solutions**:
+1. Use labels instead: `label: 0` vs `loc: [x, y]`
+2. Ensure page hasn't scrolled since snapshot
+3. Verify window hasn't been resized
+
+### Page Load Detection
+
+**Problem**: Hard to know when page finished loading
+
+**Solution**: Use progressive snapshots:
+
+```javascript
+await use_mcp_tool({
+  server_name: "windows-mcp",
+  tool_name: "Wait",
+  arguments: { duration: 2 }
+});
+
+let previousContent = "";
+let stableCount = 0;
+
+while (stableCount < 2) {
+  const snapshot = await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Snapshot",
+    arguments: { use_dom: true }
+  });
+  
+  if (snapshot === previousContent) {
+    stableCount++;
+  } else {
+    stableCount = 0;
+  }
+  
+  previousContent = snapshot;
+  
+  await use_mcp_tool({
+    server_name: "windows-mcp",
+    tool_name: "Wait",
+    arguments: { duration: 1 }
+  });
+}
+```
+
+## Next Steps
+
+- [Desktop Automation](/guides/desktop-automation) - General UI automation techniques
+- [File Operations](/guides/file-operations) - Downloading and managing files
+- [Troubleshooting](/guides/troubleshooting) - Common issues and solutions

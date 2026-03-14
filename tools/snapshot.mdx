@@ -1,0 +1,151 @@
+---
+title: Snapshot
+description: Take screenshots and inspect desktop state including UI elements, windows, and interactive components
+---
+
+The Snapshot tool captures complete desktop state including screenshots, window information, and interactive UI elements. It's the primary tool for understanding the current state of the Windows desktop before taking actions.
+
+## Parameters
+
+<ParamField path="use_vision" type="boolean" default="false">
+  Include a screenshot image with cursor highlight in the response. When enabled, returns a PNG image showing the current desktop state.
+</ParamField>
+
+<ParamField path="use_dom" type="boolean" default="false">
+  Extract browser DOM content instead of browser UI elements. Use this when you need to interact with web page content rather than browser controls. Requires `use_ui_tree=true`.
+</ParamField>
+
+<ParamField path="use_annotation" type="boolean" default="true">
+  Draw colored bounding box overlays on UI elements in the screenshot. Set to `false` for a clean screenshot without visual annotations.
+</ParamField>
+
+<ParamField path="use_ui_tree" type="boolean" default="true">
+  Extract interactive and scrollable UI elements from the accessibility tree. Set to `false` for a faster screenshot-only snapshot when element extraction is not needed.
+</ParamField>
+
+<ParamField path="width_reference_line" type="integer" optional>
+  Number of vertical reference grid lines to overlay on the screenshot for spatial reasoning. Requires `use_vision=true`.
+</ParamField>
+
+<ParamField path="height_reference_line" type="integer" optional>
+  Number of horizontal reference grid lines to overlay on the screenshot for spatial reasoning. Requires `use_vision=true`.
+</ParamField>
+
+<ParamField path="display" type="array" optional>
+  Array of display indices to capture (e.g., `[0]` or `[0,1]`). Limits all returned information to specific screens. Omit to capture the full desktop across all displays.
+</ParamField>
+
+## Response
+
+Returns desktop state information including:
+
+- **Cursor Position**: Current mouse coordinates
+- **Screenshot Resolution**: Image dimensions
+- **Screenshot Region**: Captured screen area coordinates
+- **Active Desktop**: Current virtual desktop ID
+- **All Desktops**: List of all virtual desktops
+- **Focused Window**: Currently active window details
+- **Opened Windows**: List of all visible windows
+- **Interactive Elements**: Buttons, text fields, links, menus with coordinates and labels
+- **Scrollable Elements**: Scrollable areas with coordinates and labels
+- **Screenshot Image** (if `use_vision=true`): PNG image with optional annotations and grid
+
+## Usage Examples
+
+### Basic Snapshot
+
+Capture desktop state with UI element information:
+
+```json
+{
+  "use_ui_tree": true
+}
+```
+
+### Screenshot with Vision
+
+Get a visual screenshot with annotated UI elements:
+
+```json
+{
+  "use_vision": true,
+  "use_annotation": true
+}
+```
+
+### Clean Screenshot
+
+Capture a clean screenshot without bounding box overlays:
+
+```json
+{
+  "use_vision": true,
+  "use_annotation": false
+}
+```
+
+### Browser DOM Extraction
+
+Extract web page content from the active browser tab:
+
+```json
+{
+  "use_dom": true,
+  "use_ui_tree": true
+}
+```
+
+### Spatial Reasoning Grid
+
+Add reference grid lines for better spatial understanding:
+
+```json
+{
+  "use_vision": true,
+  "width_reference_line": 10,
+  "height_reference_line": 10
+}
+```
+
+### Multi-Monitor Setup
+
+Capture only the primary display:
+
+```json
+{
+  "use_vision": true,
+  "display": [0]
+}
+```
+
+### Fast Screenshot-Only Mode
+
+Quickly capture a screenshot without UI element extraction:
+
+```json
+{
+  "use_vision": true,
+  "use_ui_tree": false
+}
+```
+
+<Note>
+  Always call Snapshot first before using Click, Type, Scroll, or Move tools with label parameters. These tools require UI element labels from a recent Snapshot call.
+</Note>
+
+<Tip>
+  Use `use_dom=true` when interacting with web content that blocks HTTP requests or requires browser-rendered DOM access. This is particularly useful for dynamic web applications.
+</Tip>
+
+<Tip>
+  Screenshots are automatically capped at 1920x1080 resolution for token efficiency. Reference grid lines help with precise coordinate-based interactions.
+</Tip>
+
+## Best Practices
+
+1. **Call Snapshot First**: Always capture desktop state before attempting interactions
+2. **Use Labels Over Coordinates**: Prefer using element labels returned by Snapshot rather than hardcoded coordinates
+3. **Enable Vision Selectively**: Only use `use_vision=true` when you need visual confirmation
+4. **DOM vs UI**: Use `use_dom=true` for web page content, `use_dom=false` for browser controls
+5. **Performance**: Set `use_ui_tree=false` when you only need a quick screenshot
+6. **Multi-Monitor**: Use the `display` parameter to focus on specific screens in multi-monitor setups

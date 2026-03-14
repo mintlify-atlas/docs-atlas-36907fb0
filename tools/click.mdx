@@ -1,0 +1,132 @@
+---
+title: Click
+description: Perform mouse clicks at coordinates or on labeled UI elements
+---
+
+The Click tool performs mouse click operations at specified screen coordinates or on UI elements identified by their label from a Snapshot. It supports different button types and click counts.
+
+## Parameters
+
+<ParamField path="loc" type="array" optional>
+  Coordinates `[x, y]` where to perform the click. Must be a list of exactly 2 integers representing screen coordinates. Either `loc` or `label` must be provided.
+</ParamField>
+
+<ParamField path="label" type="integer" optional>
+  UI element label/id from a Snapshot call. The tool will automatically resolve the element's coordinates. Either `loc` or `label` must be provided.
+</ParamField>
+
+<ParamField path="button" type="string" default="left">
+  Mouse button to click. Options:
+  - `left`: Left mouse button (selection/activation)
+  - `right`: Right mouse button (context menus)
+  - `middle`: Middle mouse button
+</ParamField>
+
+<ParamField path="clicks" type="integer" default="1">
+  Number of clicks to perform:
+  - `0`: Hover only (no click)
+  - `1`: Single click (select/focus)
+  - `2`: Double click (open/activate)
+</ParamField>
+
+## Response
+
+Returns a confirmation message indicating the type of click performed and the coordinates:
+
+```
+Single left clicked at (450,320).
+```
+
+## Usage Examples
+
+### Click at Coordinates
+
+Click at specific screen coordinates:
+
+```json
+{
+  "loc": [450, 320],
+  "button": "left",
+  "clicks": 1
+}
+```
+
+### Click by Label
+
+Click on a UI element using its label from Snapshot:
+
+```json
+{
+  "label": 42,
+  "button": "left",
+  "clicks": 1
+}
+```
+
+### Right Click for Context Menu
+
+Open a context menu with a right click:
+
+```json
+{
+  "loc": [500, 400],
+  "button": "right",
+  "clicks": 1
+}
+```
+
+### Double Click to Open
+
+Double click to open a file or application:
+
+```json
+{
+  "label": 15,
+  "button": "left",
+  "clicks": 2
+}
+```
+
+### Hover Without Clicking
+
+Move mouse to position without clicking (useful for revealing tooltips):
+
+```json
+{
+  "loc": [600, 200],
+  "clicks": 0
+}
+```
+
+### Middle Click
+
+Middle mouse button click (e.g., open link in new tab):
+
+```json
+{
+  "loc": [700, 350],
+  "button": "middle",
+  "clicks": 1
+}
+```
+
+<Note>
+  When using the `label` parameter, you must call the Snapshot tool first to populate the desktop state with UI element labels. The label corresponds to the element IDs returned by Snapshot.
+</Note>
+
+<Tip>
+  Use `label` instead of `loc` whenever possible. Labels are more reliable as they reference actual UI elements, while coordinates may become invalid if windows move or resize.
+</Tip>
+
+<Tip>
+  Set `clicks=0` to hover over an element without clicking. This is useful for triggering hover effects or tooltips before reading their content with another Snapshot.
+</Tip>
+
+## Best Practices
+
+1. **Prefer Labels**: Use element labels from Snapshot rather than hardcoded coordinates
+2. **Call Snapshot First**: Always capture desktop state before clicking by label
+3. **Single vs Double Click**: Use single click (`clicks=1`) for buttons and links, double click (`clicks=2`) for opening files
+4. **Right Click Menus**: Use `button="right"` to access context menus and additional options
+5. **Hover for Tooltips**: Use `clicks=0` to reveal tooltips or dropdown menus before taking further action
+6. **Wait After Click**: Consider using the Wait tool after clicks that trigger loading or animations

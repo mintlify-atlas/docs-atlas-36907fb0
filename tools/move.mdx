@@ -1,0 +1,150 @@
+---
+title: Move
+description: Move mouse cursor to coordinates or labeled UI elements, with optional drag-and-drop
+---
+
+The Move tool moves the mouse cursor to specified screen coordinates or to UI elements identified by their label from a Snapshot. It also supports drag-and-drop operations.
+
+## Parameters
+
+<ParamField path="loc" type="array" optional>
+  Coordinates `[x, y]` to move the cursor to. Must be a list of exactly 2 integers representing screen coordinates. Either `loc` or `label` must be provided.
+</ParamField>
+
+<ParamField path="label" type="integer" optional>
+  UI element label/id from a Snapshot call. The tool will automatically resolve the element's coordinates and move the cursor there. Either `loc` or `label` must be provided.
+</ParamField>
+
+<ParamField path="drag" type="boolean" default="false">
+  Perform a drag-and-drop operation from the current mouse position to the target coordinates. Set to `true` to drag, `false` for a simple cursor move (hover).
+</ParamField>
+
+## Response
+
+Returns a confirmation message indicating the move or drag operation:
+
+```
+Moved the mouse pointer to (450,320).
+```
+
+or
+
+```
+Dragged to (450,320).
+```
+
+## Usage Examples
+
+### Move to Coordinates
+
+Move cursor to specific screen coordinates:
+
+```json
+{
+  "loc": [450, 320]
+}
+```
+
+### Move by Label
+
+Move cursor to a UI element using its label from Snapshot:
+
+```json
+{
+  "label": 42
+}
+```
+
+### Hover Without Clicking
+
+Move mouse to reveal tooltips or hover effects:
+
+```json
+{
+  "loc": [600, 200]
+}
+```
+
+### Drag and Drop
+
+Drag from current position to target coordinates:
+
+```json
+{
+  "loc": [800, 400],
+  "drag": true
+}
+```
+
+### Drag Element by Label
+
+Drag to a UI element using its label:
+
+```json
+{
+  "label": 25,
+  "drag": true
+}
+```
+
+### Multi-Step Drag Operation
+
+1. First, move to the source element (or click to grab it):
+
+```json
+{
+  "label": 10
+}
+```
+
+2. Then drag to the destination:
+
+```json
+{
+  "loc": [700, 500],
+  "drag": true
+}
+```
+
+### Repositioning Windows
+
+Drag a window title bar to a new position:
+
+1. Move to title bar:
+
+```json
+{
+  "label": 15
+}
+```
+
+2. Drag to new position:
+
+```json
+{
+  "loc": [400, 100],
+  "drag": true
+}
+```
+
+<Note>
+  When using the `label` parameter, you must call the Snapshot tool first to populate the desktop state with UI element labels. The label corresponds to the element IDs returned by Snapshot.
+</Note>
+
+<Tip>
+  Use Move with `drag=false` (default) to hover over elements and reveal tooltips, dropdown menus, or other hover-triggered UI elements. Follow with a Snapshot to capture the newly visible content.
+</Tip>
+
+<Tip>
+  For drag-and-drop operations, the cursor must already be positioned at the source location (or holding down the mouse button). Use Click or Move to position the cursor first, then use Move with `drag=true` to complete the drag operation.
+</Tip>
+
+## Best Practices
+
+1. **Prefer Labels**: Use element labels from Snapshot rather than hardcoded coordinates
+2. **Call Snapshot First**: Always capture desktop state before moving by label
+3. **Hover for Tooltips**: Move cursor to elements to reveal hover effects before taking snapshots
+4. **Drag Sequence**: For drag-and-drop, first move to source, then use `drag=true` to destination
+5. **Window Repositioning**: Move works well for dragging window title bars and resizable elements
+6. **Reveal Menus**: Use Move to hover over menu items and reveal sub-menus
+7. **Wait After Move**: Consider using Wait after move operations if UI elements need time to respond to hover

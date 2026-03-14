@@ -1,0 +1,126 @@
+---
+title: Scrape
+description: Fetch and extract web page content from URLs
+---
+
+The Scrape tool fetches web page content from a URL and returns clean, structured information. It supports both HTTP requests and browser DOM extraction, with optional LLM-powered content processing.
+
+## Parameters
+
+<ParamField path="url" type="string" required>
+  The URL of the web page to scrape. Must be a valid HTTP or HTTPS URL.
+</ParamField>
+
+<ParamField path="query" type="string">
+  Optional query to focus the extraction on specific information. When provided with `use_sampling=True`, the LLM will extract only content relevant to this query.
+  
+  Example: `"pricing information"` or `"product specifications"`
+</ParamField>
+
+<ParamField path="use_dom" type="boolean" default="false">
+  Extract content from the active browser tab's DOM instead of performing an HTTP request.
+  
+  Set to `true` when:
+  - The website blocks HTTP requests
+  - You need to scrape content after JavaScript execution
+  - The page requires authentication or session state
+  
+  **Note:** Requires the URL to be already open in a browser window.
+</ParamField>
+
+<ParamField path="use_sampling" type="boolean" default="true">
+  Use LLM processing to clean and summarize the scraped content.
+  
+  - When `true`: Returns clean, concise prose with navigation menus, ads, and boilerplate removed
+  - When `false`: Returns raw HTML content without processing
+  
+  <Tip>Set to `false` if you need the complete raw content or want to avoid LLM processing overhead.</Tip>
+</ParamField>
+
+## Return Value
+
+Returns a string containing:
+- The URL that was scraped
+- The extracted content (processed or raw, depending on `use_sampling`)
+
+When using `use_dom=True`, the output also includes scroll status indicators (`"Reached top"` / `"Scroll up to see more"` and `"Reached bottom"` / `"Scroll down to see more"`).
+
+## Usage Examples
+
+### Basic Web Scraping
+
+```python
+# Fetch and summarize a webpage
+result = scrape_tool(
+    url="https://example.com/documentation"
+)
+```
+
+### Focused Extraction with Query
+
+```python
+# Extract only pricing information
+result = scrape_tool(
+    url="https://example.com/pricing",
+    query="subscription plans and pricing tiers"
+)
+```
+
+### Browser DOM Extraction
+
+```python
+# Scrape content from an open browser tab
+# (Useful for sites that block HTTP requests)
+result = scrape_tool(
+    url="https://protected-site.com/page",
+    use_dom=True
+)
+```
+
+### Raw Content Extraction
+
+```python
+# Get raw content without LLM processing
+result = scrape_tool(
+    url="https://example.com/data",
+    use_sampling=False
+)
+```
+
+## Best Practices
+
+<Note>
+  By default, Scrape performs a lightweight HTTP request. This is faster and doesn't require a browser, but some websites may block automated requests.
+</Note>
+
+<Tip>
+  Use `use_dom=True` when:
+  - The website returns "Access Denied" or blocks automated requests
+  - Content is loaded dynamically via JavaScript
+  - You need to scrape authenticated pages
+  
+  Just make sure the page is already open in a browser before calling the tool.
+</Tip>
+
+<Warning>
+  When using `use_dom=True`, the tool extracts content from the **currently active browser tab**. Ensure the correct page is focused before scraping.
+</Warning>
+
+## Common Use Cases
+
+1. **Documentation Reading**: Fetch API documentation or technical guides for reference
+2. **Data Extraction**: Extract structured information like pricing, product details, or specifications
+3. **Content Monitoring**: Check webpage content for updates or changes
+4. **Research**: Gather information from multiple web sources
+
+## Technical Details
+
+- **HTTP Mode** (`use_dom=False`): Performs a standard HTTP GET request to fetch page content
+- **DOM Mode** (`use_dom=True`): Extracts the accessibility tree from the browser's DOM, providing semantic structure
+- **LLM Processing** (`use_sampling=True`): Uses Claude to extract meaningful content and filter out boilerplate (navigation, ads, footers, etc.)
+- **Scroll Detection**: In DOM mode, detects the current scroll position to indicate if more content is available above or below
+
+## Related Tools
+
+- [Snapshot](/tools/snapshot) - Capture the current desktop state including browser windows
+- [Shell](/tools/shell) - Execute PowerShell commands including `Invoke-WebRequest` for advanced HTTP operations

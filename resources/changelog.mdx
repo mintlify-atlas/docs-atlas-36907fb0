@@ -1,0 +1,142 @@
+---
+title: Changelog
+description: Recent updates and version history for Windows-MCP
+---
+
+## Recent Updates
+
+Windows-MCP is actively developed with regular updates and improvements. Here are the latest highlights:
+
+### Latest Features
+
+- **VM Support**: Windows-MCP now supports cloud-hosted Windows automation via [windowsmcp.io](https://windowsmcp.io)
+- **2M+ Users**: Reached over 2 million users in [Claude Desktop Extensions](https://claude.ai/directory)
+- **PyPI Distribution**: Now available on [PyPI](https://pypi.org/project/windows-mcp/) with `uvx windows-mcp` support
+- **MCP Registry**: Added to the official [MCP Registry](https://github.com/modelcontextprotocol/registry)
+- **Windows-Use Agent**: Try [Windows-Use](https://pypi.org/project/windows-use/), an agent built on Windows-MCP
+
+### New Tools
+
+- **Registry Tool**: Read, write, delete, or list Windows Registry values and keys
+- **Notification Tool**: Send Windows toast notifications with title and message
+- **Process Tool**: List running processes or terminate them by PID or name
+- **MultiEdit Tool**: Enter text into multiple input fields at specified coordinates
+- **MultiSelect Tool**: Select multiple items (files, folders, checkboxes) with optional Ctrl key
+
+### Platform Support
+
+Windows-MCP supports:
+- Windows 7
+- Windows 8, 8.1
+- Windows 10
+- Windows 11
+
+## Version History
+
+For detailed version history and release notes, visit our [GitHub Releases](https://github.com/CursorTouch/Windows-MCP/releases) page.
+
+<Card title="View All Releases" icon="github" href="https://github.com/CursorTouch/Windows-MCP/releases">
+  See complete version history with detailed changelogs
+</Card>
+
+## Upgrade Guide
+
+### Upgrading from PyPI
+
+If you installed via `uvx`:
+
+```bash
+uvx --reinstall windows-mcp
+```
+
+### Upgrading from Source
+
+If you cloned the repository:
+
+```bash
+cd Windows-MCP
+git pull origin main
+uv sync
+```
+
+### Configuration Updates
+
+Most updates are backward compatible. If configuration changes are required, they will be noted in the specific release notes on GitHub.
+
+## Breaking Changes
+
+We strive to maintain backward compatibility. Any breaking changes will be:
+- Clearly documented in release notes
+- Announced on [Twitter/X](https://x.com/CursorTouch)
+- Discussed in [Discord Community](https://discord.com/invite/Aue9Yj2VzS)
+
+## Release Schedule
+
+Windows-MCP follows continuous deployment:
+- **Bug fixes**: Released as needed
+- **New features**: Released when stable and tested
+- **Security updates**: Released immediately
+
+## Roadmap
+
+### In Progress
+
+- Improved text selection within paragraphs (currently limited by a11y tree)
+- Enhanced Type-Tool for IDE programming workflows
+- Better multi-language support
+
+### Limitations
+
+Some current limitations we're working on:
+- **Text selection**: Selecting specific sections of text in a paragraph is limited by accessibility tree constraints
+- **IDE typing**: Type-Tool types entire programs at once in files; optimizing for incremental code entry
+- **Gaming**: This MCP server is not designed for video game automation
+
+## Stay Updated
+
+<CardGroup cols={2}>
+  <Card title="GitHub Releases" icon="github" href="https://github.com/CursorTouch/Windows-MCP/releases">
+    Subscribe to release notifications
+  </Card>
+  <Card title="Twitter/X" icon="twitter" href="https://x.com/CursorTouch">
+    Follow @CursorTouch for announcements
+  </Card>
+  <Card title="Discord" icon="discord" href="https://discord.com/invite/Aue9Yj2VzS">
+    Join community discussions
+  </Card>
+  <Card title="Star History" icon="star" href="https://www.star-history.com/#CursorTouch/Windows-MCP&Date">
+    View project growth over time
+  </Card>
+</CardGroup>
+
+## Feature Requests
+
+Have an idea for a new feature? We welcome suggestions!
+
+1. Check existing [GitHub Issues](https://github.com/CursorTouch/Windows-MCP/issues) to avoid duplicates
+2. Open a new issue with the "Feature Request" template
+3. Join the discussion on [Discord](https://discord.com/invite/Aue9Yj2VzS)
+
+## Bug Reports
+
+Found a bug? Please report it!
+
+- **GitHub Issues**: [Report a bug](https://github.com/CursorTouch/Windows-MCP/issues/new)
+- **Security Issues**: Email [jeogeoalukka@gmail.com](mailto:jeogeoalukka@gmail.com)
+
+Include:
+- Windows version
+- Python version
+- MCP client (Claude Desktop, etc.)
+- Steps to reproduce
+- Expected vs. actual behavior
+
+## Acknowledgements
+
+Thanks to all contributors who help make Windows-MCP better with each release!
+
+<a href="https://github.com/CursorTouch/Windows-MCP/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=CursorTouch/Windows-MCP" alt="Contributors" />
+</a>
+
+Made with ❤️ by the CursorTouch community

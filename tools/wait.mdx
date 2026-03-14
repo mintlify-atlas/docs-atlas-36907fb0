@@ -1,0 +1,217 @@
+---
+title: Wait
+description: Pause execution for a specified duration in seconds
+---
+
+The Wait tool pauses execution for a specified number of seconds. It's essential for allowing time for applications to launch, UI elements to load, animations to complete, or page content to render.
+
+## Parameters
+
+<ParamField path="duration" type="integer" required>
+  Number of seconds to wait. Must be a positive integer. Common values range from 1-10 seconds depending on the operation.
+</ParamField>
+
+## Response
+
+Returns a confirmation message indicating the wait duration:
+
+```
+Waited for 3 seconds.
+```
+
+## Usage Examples
+
+### Wait for Application Launch
+
+Wait for an application to fully open:
+
+```json
+{
+  "duration": 3
+}
+```
+
+### Wait for Page Load
+
+Allow time for web page content to render:
+
+```json
+{
+  "duration": 2
+}
+```
+
+### Wait for Dialog to Appear
+
+Give time for a dialog box to open:
+
+```json
+{
+  "duration": 1
+}
+```
+
+### Wait for Animation
+
+Allow UI animation or transition to complete:
+
+```json
+{
+  "duration": 1
+}
+```
+
+### Wait for Long Process
+
+Wait for a slow operation to complete:
+
+```json
+{
+  "duration": 10
+}
+```
+
+### Wait After Shortcut
+
+Ensure the system responds to a keyboard shortcut:
+
+```json
+{
+  "duration": 2
+}
+```
+
+## Common Wait Scenarios
+
+### After Launching Applications
+
+Applications need time to start and render their UI:
+
+- **Light applications**: 2-3 seconds (Notepad, Calculator)
+- **Medium applications**: 3-5 seconds (File Explorer, simple utilities)
+- **Heavy applications**: 5-10 seconds (Office apps, browsers, IDEs)
+
+### After Clicking Buttons
+
+Some actions require processing time:
+
+- **Simple buttons**: 1 second
+- **Submit/Save buttons**: 2-3 seconds
+- **Complex operations**: 3-5 seconds
+
+### After Scrolling
+
+Allow content to load:
+
+- **Fast scrolling**: 1 second
+- **Dynamic content**: 2-3 seconds
+- **Infinite scroll**: 3-5 seconds
+
+### After Opening Menus
+
+Give menus time to expand:
+
+- **Simple menus**: 0.5-1 second
+- **Nested menus**: 1-2 seconds
+- **Context menus**: 1 second
+
+### After Typing
+
+Allow for autocomplete or validation:
+
+- **Simple text**: 0.5-1 second
+- **Search with suggestions**: 1-2 seconds
+- **Form validation**: 1-2 seconds
+
+## Workflow Examples
+
+### Launch and Interact with Application
+
+1. Launch application:
+```json
+{"mode": "launch", "name": "notepad.exe"}
+```
+
+2. Wait for it to open:
+```json
+{"duration": 2}
+```
+
+3. Take snapshot and interact:
+```json
+{"use_vision": true}
+```
+
+### Open Menu and Select Item
+
+1. Click menu:
+```json
+{"label": 10, "clicks": 1}
+```
+
+2. Wait for menu to expand:
+```json
+{"duration": 1}
+```
+
+3. Take snapshot to see menu items:
+```json
+{"use_ui_tree": true}
+```
+
+### Search and Load Results
+
+1. Type search query:
+```json
+{"text": "Windows automation", "label": 5, "press_enter": true}
+```
+
+2. Wait for results to load:
+```json
+{"duration": 3}
+```
+
+3. Capture results:
+```json
+{"use_vision": true}
+```
+
+### Scroll and Load Dynamic Content
+
+1. Scroll down:
+```json
+{"label": 20, "direction": "down", "wheel_times": 5}
+```
+
+2. Wait for content to load:
+```json
+{"duration": 2}
+```
+
+3. Take snapshot of new content:
+```json
+{"use_ui_tree": true}
+```
+
+<Tip>
+  Start with shorter wait times (1-2 seconds) and increase if needed. Waiting too long slows down automation, while not waiting enough can cause failures.
+</Tip>
+
+<Tip>
+  Always use Wait after launching applications, clicking buttons that trigger loading, or before taking a Snapshot of newly loaded content.
+</Tip>
+
+<Note>
+  Wait is a blocking operation - no other tools can execute during the wait period. Use it judiciously to balance reliability and performance.
+</Note>
+
+## Best Practices
+
+1. **Application Launch**: Wait 2-5 seconds after launching applications before interacting
+2. **Dynamic Content**: Wait 1-3 seconds after actions that load new content (clicking, scrolling)
+3. **Page Loads**: Wait 2-4 seconds for web pages to render after navigation
+4. **Animations**: Wait 1-2 seconds for UI animations and transitions to complete
+5. **Dialogs**: Wait 1-2 seconds after triggering dialogs or pop-ups
+6. **Snapshot After Wait**: Always take a Snapshot after waiting to verify the UI is ready
+7. **Adjust Based on System**: Slower systems may require longer wait times - adjust as needed
+8. **Avoid Over-waiting**: Don't use excessive wait times - it slows automation unnecessarily
